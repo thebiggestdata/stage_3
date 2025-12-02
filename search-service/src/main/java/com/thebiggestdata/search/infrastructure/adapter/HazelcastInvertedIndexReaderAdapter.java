@@ -1,4 +1,4 @@
-package com.thebiggestdata.search.infrastructure.adapters;
+package com.thebiggestdata.search.infrastructure.adapter;
 
 import com.thebiggestdata.search.domain.port.InvertedIndexReaderPort;
 import com.hazelcast.core.HazelcastInstance;

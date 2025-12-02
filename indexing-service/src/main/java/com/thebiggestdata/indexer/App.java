@@ -20,7 +20,7 @@ public class App {
     public static void main(String[] args) {
 
         System.out.println("Starting Indexer...");
-
+        // TODO use environment variables from the docker-compose
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("biggestdata-cluster");
         HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);

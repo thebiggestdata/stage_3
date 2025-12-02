@@ -16,14 +16,14 @@ public class App {
             System.out.println("Usage: java App <bookId>");
             return;
         }
-
+        // TODO use environment variables from the docker-compose
         int bookId = Integer.parseInt(args[0]);
 
         var downloadAdapter = new HttpBookFetcherAdapter();
         var datalakeAdapter = new FileSystemDatalakeAdapter();
         var replicationAdapter = new NoOpReplicationAdapter();
 
-        ConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
+        ConnectionFactory factory = new ActiveMQConnectionFactory("tcp://activemq:61616");
         String queueName = "document.ingested";
 
         var eventPublisher = new ActiveMQPublisherAdapter(factory, queueName);

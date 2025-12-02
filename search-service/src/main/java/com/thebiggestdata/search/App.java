@@ -17,6 +17,7 @@ public class App {
 
         System.out.println("Starting Search Service...");
 
+        // TODO use environment variables from the docker-compose
         ClientConfig config = new ClientConfig();
         config.setClusterName("biggestdata-cluster");
 

@@ -21,7 +21,14 @@ public class App {
         ClientConfig config = new ClientConfig();
         config.setClusterName("biggestdata-cluster");
 
+        config.getNetworkConfig().addAddress(
+                "hazelcast1:5701",
+                "hazelcast2:5701",
+                "hazelcast3:5701"
+        );
+
         HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(config);
+
 
         var indexReader = new HazelcastInvertedIndexReaderAdapter(
                 hazelcast,

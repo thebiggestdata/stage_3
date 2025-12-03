@@ -10,10 +10,8 @@ public class LocalDatalakePathResolver implements DatalakePathResolverPort {
 
     @Override
     public String resolveBodyPath(int bookId) {
-
         String pattern = bookId + "_body.txt";
         Path datalakeRoot = Path.of("datalake");
-
         try (Stream<Path> stream = Files.walk(datalakeRoot)) {
             return stream
                     .filter(p -> p.getFileName().toString().equals(pattern))
@@ -21,8 +19,6 @@ public class LocalDatalakePathResolver implements DatalakePathResolverPort {
                     .orElseThrow(() -> new RuntimeException("Body not found for " + bookId))
                     .toString();
 
-        } catch (IOException e) {
-            throw new RuntimeException("Failed searching datalake", e);
-        }
+        } catch (IOException e) {throw new RuntimeException("Failed searching datalake", e);}
     }
 }

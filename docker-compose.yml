@@ -1,0 +1,72 @@
+services:
+
+  activemq:
+    image: rmohr/activemq:latest
+    container_name: activemq
+    ports:
+      - "61616:61616"   # JMS
+      - "8161:8161"     # Web console
+    networks:
+      - bigdata
+
+  hazelcast1:
+    image: hazelcast/hazelcast:5.3.2
+    container_name: hazelcast1
+    environment:
+      - HZ_CLUSTERNAME=biggestdata-cluster
+    ports:
+      - "5701:5701"
+    networks:
+      - bigdata
+
+  hazelcast2:
+    image: hazelcast/hazelcast:5.3.2
+    container_name: hazelcast2
+    environment:
+      - HZ_CLUSTERNAME=biggestdata-cluster
+    networks:
+      - bigdata
+
+  hazelcast3:
+    image: hazelcast/hazelcast:5.3.2
+    container_name: hazelcast3
+    environment:
+      - HZ_CLUSTERNAME=biggestdata-cluster
+    networks:
+      - bigdata
+
+  ingestion-service:
+    build: ./ingestion-service
+    container_name: ingestion-service
+    depends_on:
+      - activemq
+    networks:
+      - bigdata
+    # NO usar "command", se ejecuta con docker compose run ingestion-service 84
+
+  indexing-service:
+    build: ./indexing-service
+    container_name: indexing-service
+    depends_on:
+      - activemq
+      - hazelcast1
+      - hazelcast2
+      - hazelcast3
+    networks:
+      - bigdata
+
+  search-service:
+    build: ./search-service
+    container_name: search-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - hazelcast1
+      - hazelcast2
+      - hazelcast3
+    networks:
+      - bigdata
+
+networks:
+  bigdata:
+    driver: bridge

@@ -13,7 +13,7 @@ services:
     image: hazelcast/hazelcast:5.3.2
     container_name: hazelcast1
     environment:
-      - HZ_CLUSTERNAME=biggestdata-cluster
+      - HZ_CLUSTERNAME=SearchEngine
     ports:
       - "5701:5701"
     networks:
@@ -23,7 +23,7 @@ services:
     image: hazelcast/hazelcast:5.3.2
     container_name: hazelcast2
     environment:
-      - HZ_CLUSTERNAME=biggestdata-cluster
+      - HZ_CLUSTERNAME=SearchEngine
     networks:
       - bigdata
 
@@ -31,36 +31,22 @@ services:
     image: hazelcast/hazelcast:5.3.2
     container_name: hazelcast3
     environment:
-      - HZ_CLUSTERNAME=biggestdata-cluster
+      - HZ_CLUSTERNAME=SearchEngine
     networks:
       - bigdata
 
   ingestion-service:
     build: ./ingestion-service
     container_name: ingestion-service
-    depends_on:
-      - activemq
-    networks:
-      - bigdata
-    # NO usar "command", se ejecuta con docker compose run ingestion-service 84
-
-  indexing-service:
-    build: ./indexing-service
-    container_name: indexing-service
-    depends_on:
-      - activemq
-      - hazelcast1
-      - hazelcast2
-      - hazelcast3
-    networks:
-      - bigdata
-
-  search-service:
-    build: ./search-service
-    container_name: search-service
     ports:
-      - "8080:8080"
+      - "7001:7001"
+    environment:
+      - BROKER_URL=tcp://activemq:61616
+      - REPLICATION_FACTOR=3
+      - DATALAKE_PATH=datalake
+      - DOWNLOAD_LOG_PATH=downloads.log
     depends_on:
+      - activemq
       - hazelcast1
       - hazelcast2
       - hazelcast3

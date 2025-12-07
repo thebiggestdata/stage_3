@@ -12,7 +12,7 @@ RUN mvn -q -e -DskipTests package
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-COPY --from=build /app/target/search-service-1.0-SNAPSHOT.jar app.jar
+COPY --from=build /app/target/crawler-service-1.0.0.jar app.jar
 
-EXPOSE 7003
+EXPOSE 7000
 ENTRYPOINT ["java", "-jar", "app.jar"]

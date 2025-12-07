@@ -28,7 +28,9 @@ public class TokenizerService {
 
     private List<String> split(String normalized) {
         if (normalized.isEmpty()) return List.of();
-        return Arrays.asList(normalized.split(" "));
+        return Arrays.stream(normalized.split(" "))
+                .filter(word -> word.length() >= 3)
+                .toList();
     }
 }
 

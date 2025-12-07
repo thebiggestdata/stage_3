@@ -14,4 +14,5 @@ WORKDIR /app
 
 COPY --from=build /app/target/indexer-service-1.0-SNAPSHOT.jar app.jar
 
+EXPOSE 7002
 ENTRYPOINT ["java", "-jar", "app.jar"]

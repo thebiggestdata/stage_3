@@ -53,6 +53,62 @@ services:
     networks:
       - bigdata
 
+  indexing-service:
+    build: ./indexing-service
+    container_name: indexing-service
+    ports:
+      - "7002:7002"
+    environment:
+      - BROKER_URL=tcp://activemq:61616
+      - HZ_CLUSTER_NAME=SearchEngine
+    depends_on:
+      - activemq
+      - hazelcast1
+      - hazelcast2
+      - hazelcast3
+      - ingestion-service
+    networks:
+      - bigdata
+
+  search-service:
+    build: ./search-service
+    container_name: search-service
+    ports:
+      - "7003:7003"
+    environment:
+      - HZ_CLUSTER_NAME=SearchEngine
+    depends_on:
+      - hazelcast1
+      - hazelcast2
+      - hazelcast3
+      - indexing-service
+    networks:
+      - bigdata
+
+  crawler-service:
+    build: ./crawler-service
+    container_name: crawler-service
+    ports:
+      - "7000:7000"
+    environment:
+      - BROKER_URL=tcp://activemq:61616
+    depends_on:
+      - activemq
+    networks:
+      - bigdata
+
+  nginx:
+    build: ./nginx
+    container_name: nginx-lb
+    ports:
+      - "80:80"
+    depends_on:
+      - ingestion-service
+      - indexing-service
+      - search-service
+    networks:
+      - bigdata
+
 networks:
   bigdata:
     driver: bridge

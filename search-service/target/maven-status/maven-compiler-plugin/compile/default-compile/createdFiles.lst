@@ -1,0 +1,7 @@
+com/thebiggestdata/search/infrastructure/adapter/HazelcastInvertedIndexReaderAdapter.class
+com/thebiggestdata/search/domain/port/InvertedIndexReaderPort.class
+com/thebiggestdata/search/infrastructure/controller/SearchController.class
+com/thebiggestdata/search/App.class
+com/thebiggestdata/search/application/usecase/SearchBookUseCase.class
+com/thebiggestdata/search/domain/model/SearchResult.class
+com/thebiggestdata/search/domain/service/SearchEngine.class

@@ -1,5 +1,7 @@
 package com.searchengine.indexer.service;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.searchengine.indexer.model.IndexingMessage;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -44,9 +46,9 @@ public class BrokerConsumer {
     }
 
     private IndexingMessage parseMessage(String payload) {
-        String[] parts = payload.split("\\|");
-        int bookId = Integer.parseInt(parts[0]);
-        String path = parts.length > 1 ? parts[1] : null;
-        return new IndexingMessage(bookId, path);
+        Gson gson = new Gson();
+        JsonObject jsonObject = gson.fromJson(payload, JsonObject.class);
+        int bookId = jsonObject.get("bookId").getAsInt();
+        return new IndexingMessage(bookId, null);
     }
 }

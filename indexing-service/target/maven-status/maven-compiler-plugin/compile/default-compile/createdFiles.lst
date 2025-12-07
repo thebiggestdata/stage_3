@@ -1,6 +1,7 @@
 com/searchengine/indexer/config/HazelcastConfig.class
 com/searchengine/indexer/service/DatalakeClient.class
 com/searchengine/indexer/IndexerApplication.class
+com/searchengine/indexer/controller/IndexingController.class
 com/searchengine/indexer/service/IndexingService.class
 com/searchengine/indexer/model/IndexingMessage.class
 com/searchengine/indexer/service/BrokerConsumer.class

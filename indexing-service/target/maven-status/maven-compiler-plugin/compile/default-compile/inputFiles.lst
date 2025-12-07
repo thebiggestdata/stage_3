@@ -5,4 +5,5 @@
 /home/runner/work/stage_3/stage_3/indexing-service/src/main/java/com/searchengine/indexer/IndexerApplication.java
 /home/runner/work/stage_3/stage_3/indexing-service/src/main/java/com/searchengine/indexer/config/HazelcastConfig.java
 /home/runner/work/stage_3/stage_3/indexing-service/src/main/java/com/searchengine/indexer/model/Document.java
+/home/runner/work/stage_3/stage_3/indexing-service/src/main/java/com/searchengine/indexer/controller/IndexingController.java
 /home/runner/work/stage_3/stage_3/indexing-service/src/main/java/com/searchengine/indexer/model/IndexingMessage.java

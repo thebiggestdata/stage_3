@@ -87,6 +87,7 @@ public class CrawlerController {
     }
 
     private int generateBookId(String url) {
-        return Math.abs(url.hashCode() % 100000);
+        // Use unsigned right shift to ensure positive value
+        return (url.hashCode() & 0x7FFFFFFF) % 100000;
     }
 }

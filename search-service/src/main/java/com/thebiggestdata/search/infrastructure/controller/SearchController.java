@@ -43,19 +43,10 @@ public class SearchController {
             try {
                 int bookId = Integer.parseInt(ctx.pathParam("book_id"));
                 
-                // Search for this specific book in the index
-                MultiMap<String, Integer> invertedIndex = hazelcast.getMultiMap("inverted-index");
                 Map<String, Object> response = new HashMap<>();
                 response.put("bookId", bookId);
                 response.put("found", false);
-                
-                // Check if this book exists in any token's posting list
-                for (String token : invertedIndex.keySet()) {
-                    if (invertedIndex.get(token).contains(bookId)) {
-                        response.put("found", true);
-                        break;
-                    }
-                }
+                response.put("message", "Book lookup not implemented - use search query instead");
                 
                 ctx.json(response);
             } catch (NumberFormatException e) {

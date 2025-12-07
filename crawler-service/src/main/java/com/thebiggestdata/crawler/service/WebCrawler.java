@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class WebCrawler {
 
     private static final Logger logger = LoggerFactory.getLogger(WebCrawler.class);
+    private static final int MAX_CONTENT_SIZE = 10 * 1024 * 1024; // 10MB limit
     private final AtomicInteger crawledCount = new AtomicInteger(0);
 
     public BookContent crawl(String urlString, int bookId) {
@@ -29,10 +30,17 @@ public class WebCrawler {
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 StringBuilder content = new StringBuilder();
+                int totalBytes = 0;
+                
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(connection.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
+                        totalBytes += line.length() + 1; // +1 for newline
+                        if (totalBytes > MAX_CONTENT_SIZE) {
+                            logger.warn("Content size exceeded limit for {}, truncating", urlString);
+                            break;
+                        }
                         content.append(line).append("\n");
                     }
                 }

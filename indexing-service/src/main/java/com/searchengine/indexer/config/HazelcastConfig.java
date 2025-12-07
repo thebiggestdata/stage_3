@@ -15,6 +15,11 @@ public class HazelcastConfig {
         logger.info("Connecting to Hazelcast cluster: {}", clusterName);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName(clusterName);
+        clientConfig.getNetworkConfig().addAddress(
+                "hazelcast1:5701",
+                "hazelcast2:5701",
+                "hazelcast3:5701"
+        );
         this.hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
         logger.info("Connected to Hazelcast cluster successfully");
     }

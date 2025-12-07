@@ -1,7 +1,7 @@
 package com.searchengine.indexer.service;
 
 import com.searchengine.indexer.model.IndexingMessage;
-import javax.jms.*;
+import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

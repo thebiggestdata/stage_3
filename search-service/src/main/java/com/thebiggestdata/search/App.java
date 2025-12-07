@@ -17,9 +17,10 @@ public class App {
 
         System.out.println("Starting Search Service...");
 
-        // TODO use environment variables from the docker-compose
+        String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "SearchEngine");
+        
         ClientConfig config = new ClientConfig();
-        config.setClusterName("biggestdata-cluster");
+        config.setClusterName(clusterName);
 
         config.getNetworkConfig().addAddress(
                 "hazelcast1:5701",
@@ -28,7 +29,6 @@ public class App {
         );
 
         HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(config);
-
 
         var indexReader = new HazelcastInvertedIndexReaderAdapter(
                 hazelcast,
@@ -39,11 +39,13 @@ public class App {
 
         var searchUseCase = new SearchBookUseCase(indexReader, searchEngine);
 
-        Javalin app = Javalin.create().start(8080);
+        Javalin app = Javalin.create(javalinConfig -> {
+            javalinConfig.http.defaultContentType = "application/json";
+        }).start(7003);
 
-        var controller = new SearchController(searchUseCase);
+        var controller = new SearchController(searchUseCase, hazelcast);
         controller.registerRoutes(app);
 
-        System.out.println("Search Service started on port 8080");
+        System.out.println("Search Service started on port 7003");
     }
 }

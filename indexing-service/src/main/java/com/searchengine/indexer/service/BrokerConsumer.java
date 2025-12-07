@@ -59,6 +59,9 @@ public class BrokerConsumer {
         } catch (JsonSyntaxException e) {
             logger.error("Failed to parse JSON message: {}", payload, e);
             throw new IllegalArgumentException("Failed to parse JSON message", e);
+        } catch (NumberFormatException e) {
+            logger.error("Invalid bookId value in message: {}", payload, e);
+            throw new IllegalArgumentException("Invalid bookId value", e);
         }
     }
 }

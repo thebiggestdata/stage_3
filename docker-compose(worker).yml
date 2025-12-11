@@ -1,0 +1,31 @@
+services:
+  ingestion-service-worker:
+    build: ./ingestion-service
+    container_name: ingestion-worker
+    hostname: ingestion-worker
+    ports:
+      - "7002:7001"
+      - "5702:5701"
+    environment:
+      - AUTO_LOAD_BOOKS=false
+      - BROKER_URL=tcp://172.20.0.10:61616
+      - REPLICATION_FACTOR=3
+      - DATALAKE_PATH=/app/datalake
+      - DOWNLOAD_LOG_PATH=/app/downloads.log
+      - HZ_CLUSTER_NAME=SearchEngine
+      - NODE_NAME=ingestion-worker
+      - HZ_NETWORK_PORT=5701
+      - HZ_NETWORK_PORT_AUTO_INCREMENT=false
+      - HZ_MEMBERS=172.20.0.11:5701
+    volumes:
+      - ./datalake-worker:/app/datalake
+      - ./logs-worker:/app/logs
+    networks:
+      bigdata:
+        ipv4_address: 172.20.0.12
+    restart: unless-stopped
+
+networks:
+  bigdata:
+    external: true
+    name: stage_3k_bigdata

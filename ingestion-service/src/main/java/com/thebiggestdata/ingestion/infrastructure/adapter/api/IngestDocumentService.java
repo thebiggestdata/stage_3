@@ -1,6 +1,6 @@
 package com.thebiggestdata.ingestion.infrastructure.adapter.api;
 
-import com.thebiggestdata.ingestion.infrastructure.adapter.activeMQ.ActiveMQIngestedBookProvider;
+import com.thebiggestdata.ingestion.infrastructure.adapter.activemq.ActiveMQIngestedBookProvider;
 import com.thebiggestdata.ingestion.infrastructure.adapter.documentprovider.FetchGutenbergBook;
 import com.thebiggestdata.ingestion.infrastructure.adapter.documentprovider.StorageDocDate;
 import com.thebiggestdata.ingestion.infrastructure.port.DownloadDocumentProvider;

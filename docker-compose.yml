@@ -1,114 +1,61 @@
+version: '3.8'
+
 services:
-
   activemq:
-    image: rmohr/activemq:latest
     container_name: activemq
+    image: apache/activemq-classic:5.18.6
     ports:
-      - "61616:61616"   # JMS
-      - "8161:8161"     # Web console
-    networks:
-      - bigdata
-
-  hazelcast1:
-    image: hazelcast/hazelcast:5.3.2
-    container_name: hazelcast1
+      - "61616:61616"
+      - "8161:8161"
     environment:
-      - HZ_CLUSTERNAME=SearchEngine
-    ports:
-      - "5701:5701"
+      - ACTIVEMQ_MIN_MEMORY=512
+      - ACTIVEMQ_MAX_MEMORY=2048
+      - ACTIVEMQ_OPTS=-Djava.net.preferIPv4Stack=true
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/localhost/61616 && </dev/tcp/localhost/8161' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
     networks:
-      - bigdata
+      bigdata:
+        ipv4_address: 172.20.0.10
+    restart: unless-stopped
 
-  hazelcast2:
-    image: hazelcast/hazelcast:5.3.2
-    container_name: hazelcast2
-    environment:
-      - HZ_CLUSTERNAME=SearchEngine
-    networks:
-      - bigdata
-
-  hazelcast3:
-    image: hazelcast/hazelcast:5.3.2
-    container_name: hazelcast3
-    environment:
-      - HZ_CLUSTERNAME=SearchEngine
-    networks:
-      - bigdata
-
-  ingestion-service:
+  ingestion-service-manager:
     build: ./ingestion-service
-    container_name: ingestion-service
+    container_name: ingestion-manager
+    hostname: ingestion-manager
     ports:
       - "7001:7001"
+      - "5701:5701"
     environment:
       - BROKER_URL=tcp://activemq:61616
       - REPLICATION_FACTOR=3
-      - DATALAKE_PATH=datalake
-      - DOWNLOAD_LOG_PATH=downloads.log
-    depends_on:
-      - activemq
-      - hazelcast1
-      - hazelcast2
-      - hazelcast3
-    networks:
-      - bigdata
-
-  indexing-service:
-    build: ./indexing-service
-    container_name: indexing-service
-    ports:
-      - "7002:7002"
-    environment:
-      - BROKER_URL=tcp://activemq:61616
+      - DATALAKE_PATH=/app/datalake
+      - DOWNLOAD_LOG_PATH=/app/downloads.log
       - HZ_CLUSTER_NAME=SearchEngine
+      - NODE_NAME=ingestion-manager
+      - HZ_NETWORK_PORT=5701
+      - HZ_NETWORK_PORT_AUTO_INCREMENT=false
+      - AUTO_LOAD_BOOKS=true
+      - LOAD_START_ID=1
+      - LOAD_END_ID=10000
+      - LOAD_THREADS=20
+    volumes:
+      - ./datalake-manager:/app/datalake
+      - ./logs-manager:/app/logs
     depends_on:
-      - activemq
-      - hazelcast1
-      - hazelcast2
-      - hazelcast3
-      - ingestion-service
+      activemq:
+        condition: service_healthy
     networks:
-      - bigdata
-
-  search-service:
-    build: ./search-service
-    container_name: search-service
-    ports:
-      - "7003:7003"
-    environment:
-      - HZ_CLUSTER_NAME=SearchEngine
-    depends_on:
-      - hazelcast1
-      - hazelcast2
-      - hazelcast3
-      - indexing-service
-    networks:
-      - bigdata
-
-  crawler-service:
-    build: ./crawler-service
-    container_name: crawler-service
-    ports:
-      - "7000:7000"
-    environment:
-      - BROKER_URL=tcp://activemq:61616
-    depends_on:
-      - activemq
-    networks:
-      - bigdata
-
-  nginx:
-    build: ./nginx
-    container_name: nginx-lb
-    ports:
-      - "80:80"
-    depends_on:
-      - ingestion-service
-      - indexing-service
-      - search-service
-    networks:
-      - bigdata
+      bigdata:
+        ipv4_address: 172.20.0.11
+    restart: unless-stopped
 
 networks:
   bigdata:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

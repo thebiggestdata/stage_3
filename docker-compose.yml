@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # ActiveMQ Message Broker
   activemq:
     container_name: activemq
     image: apache/activemq-classic:5.18.6
@@ -82,7 +79,6 @@ services:
         ipv4_address: 172.20.0.12
     restart: unless-stopped
 
-  # Search Service
   search-service:
     build: ./search-service
     container_name: search-service
@@ -106,7 +102,6 @@ services:
         ipv4_address: 172.20.0.13
     restart: unless-stopped
 
-  # Nginx Load Balancer
   nginx:
     image: nginx:alpine
     container_name: nginx-lb

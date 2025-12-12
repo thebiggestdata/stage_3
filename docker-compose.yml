@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # ActiveMQ Message Broker
   activemq:
     container_name: activemq
     image: apache/activemq-classic:5.18.6
@@ -22,7 +23,8 @@ services:
         ipv4_address: 172.20.0.10
     restart: unless-stopped
 
-  ingestion-service-manager:
+  # Ingestion Service
+  ingestion-service:
     build: ./ingestion-service
     container_name: ingestion-manager
     hostname: ingestion-manager
@@ -38,10 +40,11 @@ services:
       - NODE_NAME=ingestion-manager
       - HZ_NETWORK_PORT=5701
       - HZ_NETWORK_PORT_AUTO_INCREMENT=false
+      - HZ_MEMBERS=172.20.0.11:5701,172.20.0.12:5701,172.20.0.13:5701
       - AUTO_LOAD_BOOKS=true
       - LOAD_START_ID=1
-      - LOAD_END_ID=10000
-      - LOAD_THREADS=20
+      - LOAD_END_ID=100
+      - LOAD_THREADS=10
     volumes:
       - ./datalake-manager:/app/datalake
       - ./logs-manager:/app/logs
@@ -51,6 +54,73 @@ services:
     networks:
       bigdata:
         ipv4_address: 172.20.0.11
+    restart: unless-stopped
+
+  # Indexing Service
+  indexing-service:
+    build: ./indexing-service
+    container_name: indexing-service
+    hostname: indexing-service
+    ports:
+      - "7002:7002"
+      - "5702:5701"
+    environment:
+      - BROKER_URL=tcp://activemq:61616
+      - HZ_CLUSTER_NAME=SearchEngine
+      - QUEUE_NAME=ingested.documents
+      - NODE_NAME=indexing-service
+      - HZ_NETWORK_PORT=5701
+      - HZ_NETWORK_PORT_AUTO_INCREMENT=false
+      - HZ_MEMBERS=172.20.0.11:5701,172.20.0.12:5701,172.20.0.13:5701
+    depends_on:
+      activemq:
+        condition: service_healthy
+      ingestion-service:
+        condition: service_started
+    networks:
+      bigdata:
+        ipv4_address: 172.20.0.12
+    restart: unless-stopped
+
+  # Search Service
+  search-service:
+    build: ./search-service
+    container_name: search-service
+    hostname: search-service
+    ports:
+      - "7003:7003"
+      - "5703:5701"
+    environment:
+      - HZ_CLUSTER_NAME=SearchEngine
+      - NODE_NAME=search-service
+      - HZ_NETWORK_PORT=5701
+      - HZ_NETWORK_PORT_AUTO_INCREMENT=false
+      - HZ_MEMBERS=172.20.0.11:5701,172.20.0.12:5701,172.20.0.13:5701
+    depends_on:
+      ingestion-service:
+        condition: service_started
+      indexing-service:
+        condition: service_started
+    networks:
+      bigdata:
+        ipv4_address: 172.20.0.13
+    restart: unless-stopped
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-lb
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - ingestion-service
+      - indexing-service
+      - search-service
+    networks:
+      bigdata:
+        ipv4_address: 172.20.0.20
     restart: unless-stopped
 
 networks:

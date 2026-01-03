@@ -6,10 +6,15 @@ import java.util.*;
 public class PostingBuilder {
 
     public Map<String, List<Integer>> build(TokenStream stream) {
+        Set<String> uniqueTokens = new HashSet<>(stream.tokens());
+
         Map<String, List<Integer>> postings = new HashMap<>();
-        for (String token : stream.tokens()) {
-            postings.computeIfAbsent(token, k -> new ArrayList<>())
-                    .add(stream.bookId());
+
+        for (String token : uniqueTokens) {
+            List<Integer> bookIdList = new ArrayList<>();
+            bookIdList.add(stream.bookId());
+
+            postings.put(token, bookIdList);
         }
         return postings;
     }

@@ -21,9 +21,16 @@ public class App {
 
         System.out.println("Starting Indexer...");
         // TODO use environment variables from the docker-compose
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName("biggestdata-cluster");
-        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
+        ClientConfig config = new ClientConfig();
+        config.setClusterName("search-cluster");
+
+        config.getNetworkConfig().addAddress(
+                "hazelcast1:5701",
+                "hazelcast2:5701",
+                "hazelcast3:5701"
+        );
+
+        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(config);
 
         String brokerUrl = "tcp://activemq:61616";
         String queueName = "document.ingested";

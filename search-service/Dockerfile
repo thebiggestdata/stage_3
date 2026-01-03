@@ -1,18 +1,19 @@
-FROM eclipse-temurin:17-jdk AS build
+FROM maven:3.9-eclipse-temurin-17
+
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y maven && \
-    rm -rf /var/lib/apt/lists/*
+COPY pom.xml /app/pom.xml
 
-COPY pom.xml .
-COPY src ./src
+RUN mvn -N install
+
+COPY search-service/pom.xml /app/search-service/pom.xml
+
+COPY search-service/src /app/search-service/src
+
+WORKDIR /app/search-service
+
 RUN mvn -q -e -DskipTests package
 
-FROM eclipse-temurin:17-jre
-WORKDIR /app
+CMD ["java", "-jar", "target/search-service-1.0-SNAPSHOT.jar"]
 
-COPY --from=build /app/target/search-service-1.0-SNAPSHOT.jar app.jar
 
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]

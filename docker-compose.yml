@@ -13,7 +13,7 @@ services:
     image: hazelcast/hazelcast:5.3.2
     container_name: hazelcast1
     environment:
-      - HZ_CLUSTERNAME=biggestdata-cluster
+      - HZ_CLUSTERNAME=search-cluster
     ports:
       - "5701:5701"
     networks:
@@ -23,7 +23,7 @@ services:
     image: hazelcast/hazelcast:5.3.2
     container_name: hazelcast2
     environment:
-      - HZ_CLUSTERNAME=biggestdata-cluster
+      - HZ_CLUSTERNAME=search-cluster
     networks:
       - bigdata
 
@@ -31,22 +31,25 @@ services:
     image: hazelcast/hazelcast:5.3.2
     container_name: hazelcast3
     environment:
-      - HZ_CLUSTERNAME=biggestdata-cluster
+      - HZ_CLUSTERNAME=search-cluster
     networks:
       - bigdata
 
   ingestion-service:
-    build: ./ingestion-service
     container_name: ingestion-service
+    build:
+      context: .
+      dockerfile: ingestion-service/Dockerfile
     depends_on:
       - activemq
     networks:
       - bigdata
-    # NO usar "command", se ejecuta con docker compose run ingestion-service 84
 
   indexing-service:
-    build: ./indexing-service
     container_name: indexing-service
+    build:
+      context: .
+      dockerfile: indexing-service/Dockerfile
     depends_on:
       - activemq
       - hazelcast1
@@ -56,8 +59,10 @@ services:
       - bigdata
 
   search-service:
-    build: ./search-service
     container_name: search-service
+    build:
+      context: .
+      dockerfile: search-service/Dockerfile
     ports:
       - "8080:8080"
     depends_on:

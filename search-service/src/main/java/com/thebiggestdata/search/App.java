@@ -19,7 +19,7 @@ public class App {
 
         // TODO use environment variables from the docker-compose
         ClientConfig config = new ClientConfig();
-        config.setClusterName("biggestdata-cluster");
+        config.setClusterName("search-cluster");
 
         config.getNetworkConfig().addAddress(
                 "hazelcast1:5701",
@@ -47,3 +47,4 @@ public class App {
         System.out.println("Search Service started on port 8080");
     }
 }
+

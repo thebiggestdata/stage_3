@@ -25,13 +25,21 @@ public class App {
         ClientConfig config = new ClientConfig();
         config.setClusterName("search-cluster");
 
+        config.getNetworkConfig().setSmartRouting(false);
+
         config.getNetworkConfig().addAddress(
-                "hazelcast1:5701",
-                "hazelcast2:5701",
-                "hazelcast3:5701"
+                "hazelcast1",
+                "hazelcast2",
+                "hazelcast3"
         );
 
+        config.getConnectionStrategyConfig().getConnectionRetryConfig()
+                .setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+
+        System.out.println("Connecting to Hazelcast Cluster...");
         HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(config);
+        System.out.println("Connected.");
+
 
         String brokerUrl = "tcp://activemq:61616";
         String queueName = "document.ingested";

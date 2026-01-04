@@ -10,7 +10,7 @@ services:
       - bigdata
 
   hazelcast1:
-    image: hazelcast/hazelcast:5.3.2
+    image: hazelcast/hazelcast:5.5.0
     container_name: hazelcast1
     environment:
       - HZ_CLUSTERNAME=search-cluster
@@ -20,7 +20,7 @@ services:
       - bigdata
 
   hazelcast2:
-    image: hazelcast/hazelcast:5.3.2
+    image: hazelcast/hazelcast:5.5.0
     container_name: hazelcast2
     environment:
       - HZ_CLUSTERNAME=search-cluster
@@ -28,7 +28,7 @@ services:
       - bigdata
 
   hazelcast3:
-    image: hazelcast/hazelcast:5.3.2
+    image: hazelcast/hazelcast:5.5.0
     container_name: hazelcast3
     environment:
       - HZ_CLUSTERNAME=search-cluster

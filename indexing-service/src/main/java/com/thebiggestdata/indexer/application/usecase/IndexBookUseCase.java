@@ -1,10 +1,14 @@
 package com.thebiggestdata.indexer.application.usecase;
 
+import com.thebiggestdata.indexer.domain.model.IngestionEvent;
 import com.thebiggestdata.indexer.domain.model.RawDocument;
 import com.thebiggestdata.indexer.domain.model.TokenStream;
 import com.thebiggestdata.indexer.domain.port.*;
 import com.thebiggestdata.indexer.domain.service.PostingBuilder;
 import com.thebiggestdata.indexer.domain.service.TokenizerPipeline;
+
+import java.util.List;
+import java.util.Map;
 
 public class IndexBookUseCase {
 
@@ -32,17 +36,20 @@ public class IndexBookUseCase {
     }
 
     public void run() {
+        IngestionEvent event = eventPort.consumeBookId();
 
-        int bookId = eventPort.consumeBookId();
+        try {
+            int bookId = event.bookId();
+            String bodyPath = pathResolver.resolveBodyPath(bookId);
+            RawDocument doc = datalakeReader.read(bookId, bodyPath);
+            TokenStream stream = tokenizerPipeline.process(doc);
+            Map<String, List<Integer>> postings = postingBuilder.build(stream);
+            indexWriter.write(postings);
 
-        String bodyPath = pathResolver.resolveBodyPath(bookId);
-
-        RawDocument doc = datalakeReader.read(bookId, bodyPath);
-
-        TokenStream stream = tokenizerPipeline.process(doc);
-
-        var postings = postingBuilder.build(stream);
-
-        indexWriter.write(postings);
+            event.acknowledge();
+        } catch (Exception e) {
+            event.reject();
+            throw e;
+        }
     }
 }

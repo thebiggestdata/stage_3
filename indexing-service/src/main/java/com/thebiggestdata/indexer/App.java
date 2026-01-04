@@ -12,15 +12,16 @@ import com.thebiggestdata.indexer.infrastructure.adapter.ActiveMQIngestedEventCo
 import com.thebiggestdata.indexer.infrastructure.adapter.FileSystemDatalakeReaderAdapter;
 import com.thebiggestdata.indexer.infrastructure.adapter.HazelcastInvertedIndexWriterAdapter;
 import com.thebiggestdata.indexer.infrastructure.adapter.LocalDatalakePathResolver;
+
 import jakarta.jms.ConnectionFactory;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import java.util.concurrent.ExecutorService;
 
 public class App {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 
         System.out.println("Starting Indexer...");
-        // TODO use environment variables from the docker-compose
         ClientConfig config = new ClientConfig();
         config.setClusterName("search-cluster");
 
@@ -37,20 +38,20 @@ public class App {
 
         ConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
 
-        var eventConsumer = new ActiveMQIngestedEventConsumerAdapter(factory, queueName);
+        ActiveMQIngestedEventConsumerAdapter eventConsumer = new ActiveMQIngestedEventConsumerAdapter(factory, queueName);
 
-        var pathResolver = new LocalDatalakePathResolver();
-        var datalakeReader = new FileSystemDatalakeReaderAdapter();
+        LocalDatalakePathResolver pathResolver = new LocalDatalakePathResolver();
+        FileSystemDatalakeReaderAdapter datalakeReader = new FileSystemDatalakeReaderAdapter();
 
-        var normalizer = new TokenNormalizer();
-        var tokenizer = new Tokenizer();
-        var tokenizerPipeline = new TokenizerPipeline(normalizer, tokenizer);
+        TokenNormalizer normalizer = new TokenNormalizer();
+        Tokenizer tokenizer = new Tokenizer();
+        TokenizerPipeline tokenizerPipeline = new TokenizerPipeline(normalizer, tokenizer);
 
-        var postingBuilder = new PostingBuilder();
+        PostingBuilder postingBuilder = new PostingBuilder();
 
-        var indexWriter = new HazelcastInvertedIndexWriterAdapter(hazelcast, "inverted-index");
+        HazelcastInvertedIndexWriterAdapter indexWriter = new HazelcastInvertedIndexWriterAdapter(hazelcast, "inverted-index");
 
-        var useCase = new IndexBookUseCase(
+        IndexBookUseCase useCase = new IndexBookUseCase(
                 eventConsumer,
                 pathResolver,
                 datalakeReader,
@@ -61,14 +62,21 @@ public class App {
 
         System.out.println("Indexer started. Waiting for ingestion events...");
 
-        while (true) {
-            try {
-                useCase.run();
-                System.out.println("[✓] Document indexed successfully.");
-            } catch (Exception e) {
-                System.err.println("[X] Error during indexing: " + e.getMessage());
-                e.printStackTrace();
-            }
+        int workerCount = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(workerCount);
+
+        for (int i = 0; i < workerCount; i++) {
+            executor.submit(() -> {
+                while (true) {
+                    try {
+                        useCase.run();
+                        System.out.println("[Thread " + Thread.currentThread().getId() + "] Document indexed.");
+                    } catch (Exception e) {
+                        System.err.println("Worker error: " + e.getMessage());
+                    }
+                }
+            });
         }
+        Thread.currentThread().join();
     }
 }

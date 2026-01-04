@@ -48,7 +48,13 @@ public class IndexBookUseCase {
 
             event.acknowledge();
         } catch (Exception e) {
-            event.reject();
+            if (e.getMessage().contains("Failed searching") || e.getMessage().contains("not found")) {
+                System.err.println("Error fatal (File does not exist): " + e.getMessage());
+                event.acknowledge();
+            } else {
+                System.err.println("Error: " + e.getMessage() + ". Trying again...");
+                event.reject();
+            }
             throw e;
         }
     }

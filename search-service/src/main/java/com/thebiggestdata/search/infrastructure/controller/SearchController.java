@@ -1,25 +1,25 @@
 package com.thebiggestdata.search.infrastructure.controller;
 
-import com.thebiggestdata.search.application.usecase.SearchBookUseCase;
-
 import io.javalin.Javalin;
+import com.thebiggestdata.search.application.usecase.SearchBookUseCase;
+import com.thebiggestdata.search.domain.model.SearchResult;
 
 public class SearchController {
 
     private final SearchBookUseCase searchUseCase;
 
-    public SearchController(SearchBookUseCase searchUseCase) {
+    public SearchController(Javalin app, SearchBookUseCase searchUseCase) {
         this.searchUseCase = searchUseCase;
-    }
 
-    public void registerRoutes(Javalin app) {
         app.get("/search", ctx -> {
-            String query = ctx.queryParam("query");
+            String query = ctx.queryParam("q");
+
             if (query == null || query.isBlank()) {
-                ctx.status(400).result("Missing 'query' parameter");
+                ctx.status(400).result("Missing query param 'q'");
                 return;
             }
-            var result = searchUseCase.search(query);
+
+            SearchResult result = searchUseCase.execute(query);
             ctx.json(result);
         });
     }

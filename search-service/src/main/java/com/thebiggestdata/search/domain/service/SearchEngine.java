@@ -1,17 +1,16 @@
-package com.thebiggestdata.search.domain.service;
+package com.thebiggestdata.search.service;
 
+import com.thebiggestdata.search.application.usecase.SearchBookUseCase;
 import com.thebiggestdata.search.domain.model.SearchResult;
 
-import java.util.List;
-import java.util.Map;
-
 public class SearchEngine {
+    private final SearchBookUseCase searchBookUseCase;
 
-    public SearchResult search(String query, Map<String, List<Integer>> reversedIndex) {
-        String token = query.toLowerCase();
+    public SearchEngine(SearchBookUseCase searchBookUseCase) {
+        this.searchBookUseCase = searchBookUseCase;
+    }
 
-        List<Integer> results = reversedIndex.getOrDefault(token, List.of());
-
-        return new SearchResult(token, results);
+    public SearchResult search(String query) {
+        return searchBookUseCase.execute(query);
     }
 }

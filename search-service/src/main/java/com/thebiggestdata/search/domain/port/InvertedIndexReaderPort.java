@@ -1,8 +1,7 @@
 package com.thebiggestdata.search.domain.port;
 
-import java.util.List;
+import java.util.Set;
 
 public interface InvertedIndexReaderPort {
-
-    List<Integer> getBookIdsForToken(String token);
+    Set<String> getDocumentsForTerm(String term);
 }

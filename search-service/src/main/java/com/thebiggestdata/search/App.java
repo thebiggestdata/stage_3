@@ -1,7 +1,8 @@
 package com.thebiggestdata.search;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
 import com.thebiggestdata.search.application.usecase.SearchBookUseCase;
@@ -14,37 +15,33 @@ import io.javalin.Javalin;
 public class App {
 
     public static void main(String[] args) {
-
         System.out.println("Starting Search Service...");
-
-        // TODO use environment variables from the docker-compose
-        ClientConfig config = new ClientConfig();
+        Config config = new Config();
         config.setClusterName("search-cluster");
-
-        config.getNetworkConfig().addAddress(
-                "hazelcast1:5701",
-                "hazelcast2:5701",
-                "hazelcast3:5701"
-        );
-
-        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(config);
-
-
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getTcpIpConfig()
+                .setEnabled(true)
+                .addMember("hazelcast1:5701")
+                .addMember("hazelcast2:5701")
+                .addMember("hazelcast3:5701");
+        MultiMapConfig multiMapConfig = new MultiMapConfig("inverted-index");
+        multiMapConfig.setBackupCount(2);
+        multiMapConfig.setStatisticsEnabled(false);
+        config.addMultiMapConfig(multiMapConfig);
+        System.out.println("Joining Hazelcast cluster...");
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(config);
+        System.out.println("Search Service joined cluster as MEMBER");
         var indexReader = new HazelcastInvertedIndexReaderAdapter(
                 hazelcast,
                 "inverted-index"
         );
-
         var searchEngine = new SearchEngine();
-
         var searchUseCase = new SearchBookUseCase(indexReader, searchEngine);
-
         Javalin app = Javalin.create().start(8080);
-
         var controller = new SearchController(searchUseCase);
         controller.registerRoutes(app);
-
         System.out.println("Search Service started on port 8080");
+        System.out.println("Ready to serve queries from distributed index");
     }
 }
 

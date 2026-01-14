@@ -14,16 +14,12 @@ public class SearchController {
 
     public void registerRoutes(Javalin app) {
         app.get("/search", ctx -> {
-
             String query = ctx.queryParam("query");
-
             if (query == null || query.isBlank()) {
                 ctx.status(400).result("Missing 'query' parameter");
                 return;
             }
-
             var result = searchUseCase.search(query);
-
             ctx.json(result);
         });
     }

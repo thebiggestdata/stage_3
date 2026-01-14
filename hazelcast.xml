@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.5.xsd">
+
+    <cluster-name>SearchEngine</cluster-name>
+
+    <network>
+        <port auto-increment="true">5701</port>
+        <join>
+            <multicast enabled="false"/>
+            <tcp-ip enabled="true">
+                <member>hazelcast1:5701</member>
+                <member>hazelcast2:5701</member>
+                <member>hazelcast3:5701</member>
+            </tcp-ip>
+        </join>
+        <rest-api enabled="true">
+            <endpoint-group name="HEALTH_CHECK" enabled="true"/>
+        </rest-api>
+    </network>
+
+    <!-- MultiMap para índice invertido -->
+    <multimap name="inverted-index">
+        <backup-count>2</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <statistics-enabled>true</statistics-enabled>
+    </multimap>
+
+    <!-- MultiMap para datalake -->
+    <multimap name="datalake">
+        <backup-count>2</backup-count>
+        <async-backup-count>1</async-backup-count>
+    </multimap>
+
+    <!-- Map para control de replicación -->
+    <map name="replication-count">
+        <backup-count>2</backup-count>
+    </map>
+
+    <!-- Map para documentos procesados (idempotencia) -->
+    <map name="processed-documents">
+        <backup-count>2</backup-count>
+        <time-to-live-seconds>0</time-to-live-seconds>
+    </map>
+
+    <!-- Map para locks -->
+    <map name="book-locks">
+        <backup-count>2</backup-count>
+    </map>
+
+    <properties>
+        <property name="hazelcast.wait.seconds.before.join">0</property>
+        <property name="hazelcast.max.no.heartbeat.seconds">10</property>
+        <property name="hazelcast.logging.type">slf4j</property>
+    </properties>
+
+</hazelcast>
+

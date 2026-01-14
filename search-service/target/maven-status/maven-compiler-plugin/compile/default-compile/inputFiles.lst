@@ -1,0 +1,7 @@
+C:\Users\ercil\IdeaProjects\stage_3(1)\search-service\src\main\java\com\thebiggestdata\search\App.java
+C:\Users\ercil\IdeaProjects\stage_3(1)\search-service\src\main\java\com\thebiggestdata\search\application\usecase\SearchBookUseCase.java
+C:\Users\ercil\IdeaProjects\stage_3(1)\search-service\src\main\java\com\thebiggestdata\search\domain\service\SearchEngine.java
+C:\Users\ercil\IdeaProjects\stage_3(1)\search-service\src\main\java\com\thebiggestdata\search\infrastructure\controller\SearchController.java
+C:\Users\ercil\IdeaProjects\stage_3(1)\search-service\src\main\java\com\thebiggestdata\search\domain\port\InvertedIndexReaderPort.java
+C:\Users\ercil\IdeaProjects\stage_3(1)\search-service\src\main\java\com\thebiggestdata\search\domain\model\SearchResult.java
+C:\Users\ercil\IdeaProjects\stage_3(1)\search-service\src\main\java\com\thebiggestdata\search\infrastructure\adapter\HazelcastInvertedIndexReaderAdapter.java

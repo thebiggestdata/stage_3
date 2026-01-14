@@ -1,7 +1,7 @@
 package com.thebiggestdata.indexer;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.thebiggestdata.indexer.application.usecase.IndexBookUseCase;
 import com.thebiggestdata.indexer.domain.service.PostingBuilder;
@@ -20,33 +20,23 @@ import java.util.concurrent.ExecutorService;
 public class App {
 
     public static void main(String[] args) throws InterruptedException {
-
         System.out.println("Starting Indexer...");
-        ClientConfig config = new ClientConfig();
+
+        Config config = new Config();
         config.setClusterName("search-cluster");
+        config.getMultiMapConfig("inverted-index")
+                .setBackupCount(2)
+                .setAsyncBackupCount(1);
 
-        config.getNetworkConfig().setSmartRouting(false);
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(config);
+        System.out.println("Hazelcast member started.");
 
-        config.getNetworkConfig().addAddress(
-                "hazelcast1",
-                "hazelcast2",
-                "hazelcast3"
-        );
-
-        config.getConnectionStrategyConfig().getConnectionRetryConfig()
-                .setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-
-        System.out.println("Connecting to Hazelcast Cluster...");
-        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(config);
-        System.out.println("Connected.");
-
-
-        String brokerUrl = "tcp://activemq:61616";
+        String brokerUrl = System.getenv().getOrDefault("BROKER_URL", "tcp://localhost:61616");
         String queueName = "document.ingested";
 
         ConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
-
-        ActiveMQIngestedEventConsumerAdapter eventConsumer = new ActiveMQIngestedEventConsumerAdapter(factory, queueName);
+        ActiveMQIngestedEventConsumerAdapter eventConsumer =
+                new ActiveMQIngestedEventConsumerAdapter(factory, queueName);
 
         LocalDatalakePathResolver pathResolver = new LocalDatalakePathResolver();
         FileSystemDatalakeReaderAdapter datalakeReader = new FileSystemDatalakeReaderAdapter();
@@ -56,19 +46,15 @@ public class App {
         TokenizerPipeline tokenizerPipeline = new TokenizerPipeline(normalizer, tokenizer);
 
         PostingBuilder postingBuilder = new PostingBuilder();
-
-        HazelcastInvertedIndexWriterAdapter indexWriter = new HazelcastInvertedIndexWriterAdapter(hazelcast, "inverted-index");
+        HazelcastInvertedIndexWriterAdapter indexWriter =
+                new HazelcastInvertedIndexWriterAdapter(hazelcast, "inverted-index");
 
         IndexBookUseCase useCase = new IndexBookUseCase(
-                eventConsumer,
-                pathResolver,
-                datalakeReader,
-                tokenizerPipeline,
-                postingBuilder,
-                indexWriter
+                hazelcast, eventConsumer, pathResolver, datalakeReader,
+                tokenizerPipeline, postingBuilder, indexWriter
         );
 
-        System.out.println("Indexer started. Waiting for ingestion events...");
+        System.out.println("Indexer ready. Consuming from " + queueName);
 
         int workerCount = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(workerCount);
@@ -78,13 +64,13 @@ public class App {
                 while (true) {
                     try {
                         useCase.run();
-                        System.out.println("[Thread " + Thread.currentThread().getId() + "] Document indexed.");
                     } catch (Exception e) {
                         System.err.println("Worker error: " + e.getMessage());
                     }
                 }
             });
         }
+
         Thread.currentThread().join();
     }
 }

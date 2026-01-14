@@ -18,6 +18,13 @@ public class HazelcastInvertedIndexWriterAdapter implements InvertedIndexWriterP
     @Override
     public void write(Map<String, List<Integer>> postings) {
         MultiMap<String, Integer> mm = hazelcast.getMultiMap(mapName);
-        postings.forEach((token, ids) -> {for (Integer id : ids) mm.put(token, id);});
+        postings.forEach((token, ids) -> {
+            mm.lock(token);
+            try {
+                for (Integer id : ids) mm.put(token, id);
+            } finally {
+                mm.unlock(token);
+            }
+        });
     }
 }

@@ -20,7 +20,6 @@ public class HazelcastInvertedIndexReaderAdapter implements InvertedIndexReaderP
     @Override
     public List<Integer> getBookIdsForToken(String token) {
         var values = index.get(token);
-
         return values == null ? List.of() : new ArrayList<>(values);
     }
 }

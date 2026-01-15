@@ -18,6 +18,11 @@
                 </member-list>
             </tcp-ip>
         </join>
+
+        <!-- AÑADIR ESTO -->
+        <interfaces enabled="true">
+            <interface>0.0.0.0</interface>
+        </interfaces>
     </network>
 
     <multimap name="inverted-index">

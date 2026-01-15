@@ -1,38 +1,35 @@
 services:
-  # ========================================
-  # HAZELCAST MEMBER (Worker)
-  # ========================================
   hazelcast-worker:
     image: hazelcast/hazelcast:5.6.0
     container_name: hazelcast-worker
-    network_mode: "host"
+    ports:
+      - "5701:5701"
     environment:
       - HZ_CLUSTERNAME=SearchEngine
-      - JAVA_OPTS=-Dhazelcast.config=/opt/hazelcast/config/hazelcast.xml
       - HZ_PUBLIC_ADDRESS=${HOST_IP}:5701
       - HZ_SEED_MEMBERS=${MASTER_IP}:5701
     volumes:
-      - ./hazelcast.xml:/opt/hazelcast/config/hazelcast.xml:ro
+      - ./hazelcast.xml:/opt/hazelcast.xml:ro
+    networks:
+      - search-network
     restart: unless-stopped
 
-  # ========================================
-  # INDEXING SERVICES (3 instancias)
-  # ========================================
   indexing-service-1:
     container_name: indexing-service-1
     build:
       context: .
       dockerfile: indexing-service/Dockerfile
-    network_mode: "host"
     depends_on:
       - hazelcast-worker
     environment:
       - BROKER_URL=tcp://${MASTER_IP}:61616
       - HZ_CLUSTER_NAME=SearchEngine
-      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
-      - DATALAKE_BASE_PATH=/shared/datalake
+      - HZ_MEMBERS=${MASTER_IP}:5701
+      - DATALAKE_BASE_PATH=/app/datalake
     volumes:
-      - /shared/datalake:/shared/datalake
+      - shared_datalake:/app/datalake
+    networks:
+      - search-network
     restart: unless-stopped
 
   indexing-service-2:
@@ -40,16 +37,17 @@ services:
     build:
       context: .
       dockerfile: indexing-service/Dockerfile
-    network_mode: "host"
     depends_on:
       - hazelcast-worker
     environment:
       - BROKER_URL=tcp://${MASTER_IP}:61616
       - HZ_CLUSTER_NAME=SearchEngine
-      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
-      - DATALAKE_BASE_PATH=/shared/datalake
+      - HZ_MEMBERS=${MASTER_IP}:5701
+      - DATALAKE_BASE_PATH=/app/datalake
     volumes:
-      - /shared/datalake:/shared/datalake
+      - shared_datalake:/app/datalake
+    networks:
+      - search-network
     restart: unless-stopped
 
   indexing-service-3:
@@ -57,33 +55,34 @@ services:
     build:
       context: .
       dockerfile: indexing-service/Dockerfile
-    network_mode: "host"
     depends_on:
       - hazelcast-worker
     environment:
       - BROKER_URL=tcp://${MASTER_IP}:61616
       - HZ_CLUSTER_NAME=SearchEngine
-      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
-      - DATALAKE_BASE_PATH=/shared/datalake
+      - HZ_MEMBERS=${MASTER_IP}:5701
+      - DATALAKE_BASE_PATH=/app/datalake
     volumes:
-      - /shared/datalake:/shared/datalake
+      - shared_datalake:/app/datalake
+    networks:
+      - search-network
     restart: unless-stopped
 
-  # ========================================
-  # SEARCH SERVICES (3 instancias)
-  # ========================================
   search-service-1:
     container_name: search-service-1
     build:
       context: .
       dockerfile: search-service/Dockerfile
-    network_mode: "host"
+    ports:
+      - "8081:8080"
     depends_on:
       - hazelcast-worker
     environment:
       - HZ_CLUSTER_NAME=SearchEngine
-      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
-      - SERVER_PORT=8081
+      - HZ_MEMBERS=${MASTER_IP}:5701
+      - SERVER_PORT=8080
+    networks:
+      - search-network
     restart: unless-stopped
 
   search-service-2:
@@ -91,13 +90,16 @@ services:
     build:
       context: .
       dockerfile: search-service/Dockerfile
-    network_mode: "host"
+    ports:
+      - "8082:8080"
     depends_on:
       - hazelcast-worker
     environment:
       - HZ_CLUSTER_NAME=SearchEngine
-      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
-      - SERVER_PORT=8082
+      - HZ_MEMBERS=${MASTER_IP}:5701
+      - SERVER_PORT=8080
+    networks:
+      - search-network
     restart: unless-stopped
 
   search-service-3:
@@ -105,11 +107,26 @@ services:
     build:
       context: .
       dockerfile: search-service/Dockerfile
-    network_mode: "host"
+    ports:
+      - "8083:8080"
     depends_on:
       - hazelcast-worker
     environment:
       - HZ_CLUSTER_NAME=SearchEngine
-      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
-      - SERVER_PORT=8083
+      - HZ_MEMBERS=${MASTER_IP}:5701
+      - SERVER_PORT=8080
+    networks:
+      - search-network
     restart: unless-stopped
+
+networks:
+  search-network:
+    driver: bridge
+
+volumes:
+  shared_datalake:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: //MASTER_IP/datalake  # SMB share del master

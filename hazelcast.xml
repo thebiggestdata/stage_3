@@ -7,68 +7,34 @@
     <cluster-name>SearchEngine</cluster-name>
 
     <network>
-        <port auto-increment="true">5701</port>
-
-        <!-- INTERFAZ PÚBLICA: Permite que otros nodos vean este miembro -->
+        <port auto-increment="false">5701</port>
         <public-address>${HZ_PUBLIC_ADDRESS}</public-address>
 
         <join>
-            <!-- MULTICAST: Auto-discovery en LAN -->
-            <multicast enabled="true">
-                <multicast-group>224.2.2.3</multicast-group>
-                <multicast-port>54327</multicast-port>
-                <multicast-time-to-live>32</multicast-time-to-live>
-                <multicast-timeout-seconds>2</multicast-timeout-seconds>
-            </multicast>
-
-            <!-- TCP-IP como backup (si multicast falla) -->
-            <tcp-ip enabled="false">
+            <multicast enabled="false"/>
+            <tcp-ip enabled="true">
                 <member-list>
                     <member>${HZ_SEED_MEMBERS}</member>
                 </member-list>
             </tcp-ip>
         </join>
-
-        <rest-api enabled="true">
-            <endpoint-group name="HEALTH_CHECK" enabled="true"/>
-        </rest-api>
     </network>
 
-    <!-- MultiMap para índice invertido -->
     <multimap name="inverted-index">
         <backup-count>2</backup-count>
-        <async-backup-count>0</async-backup-count>
         <statistics-enabled>true</statistics-enabled>
     </multimap>
 
-    <!-- MultiMap para datalake -->
     <multimap name="datalake">
         <backup-count>2</backup-count>
-        <async-backup-count>1</async-backup-count>
     </multimap>
 
-    <!-- Map para control de replicación -->
     <map name="replication-count">
         <backup-count>2</backup-count>
     </map>
 
-    <!-- Map para documentos procesados (idempotencia) -->
     <map name="processed-documents">
         <backup-count>2</backup-count>
-        <time-to-live-seconds>0</time-to-live-seconds>
     </map>
-
-    <!-- Map para locks -->
-    <map name="book-locks">
-        <backup-count>2</backup-count>
-    </map>
-
-    <properties>
-        <property name="hazelcast.wait.seconds.before.join">5</property>
-        <property name="hazelcast.max.no.heartbeat.seconds">30</property>
-        <property name="hazelcast.logging.type">slf4j</property>
-        <!-- Permite bind a cualquier interfaz -->
-        <property name="hazelcast.socket.bind.any">true</property>
-    </properties>
 
 </hazelcast>

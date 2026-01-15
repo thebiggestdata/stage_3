@@ -14,6 +14,27 @@ services:
       - search-network
     restart: unless-stopped
 
+  # NECESARIO: Recibe los archivos del Master y los escribe en disco
+  ingestion-service-worker:
+    container_name: ingestion-service
+    build:
+      context: .
+      dockerfile: ingestion-service/Dockerfile
+    # No exponemos puerto 7001 para evitar conflictos, o usamos uno distinto si quieres debuggear
+    depends_on:
+      - hazelcast-worker
+    environment:
+      - BROKER_URL=tcp://${MASTER_IP}:61616
+      - HZ_CLUSTER_NAME=SearchEngine
+      - HZ_MEMBERS=${MASTER_IP}:5701
+      - DATALAKE_PATH=/app/datalake
+      - AUTO_LOAD_BOOKS=false # El worker NO descarga, solo sincroniza
+    volumes:
+      - ./datalake:/app/datalake # <--- ESCRIBE EN SU DISCO LOCAL
+    networks:
+      - search-network
+    restart: unless-stopped
+
   indexing-service-1:
     container_name: indexing-service-1
     build:
@@ -21,13 +42,15 @@ services:
       dockerfile: indexing-service/Dockerfile
     depends_on:
       - hazelcast-worker
+      - ingestion-service-worker
     environment:
       - BROKER_URL=tcp://${MASTER_IP}:61616
       - HZ_CLUSTER_NAME=SearchEngine
       - HZ_MEMBERS=${MASTER_IP}:5701
       - DATALAKE_BASE_PATH=/app/datalake
+      - QUEUE_NAME=ingested.document
     volumes:
-      - shared_datalake:/app/datalake
+      - ./datalake:/app/datalake # <--- LEE DE SU DISCO LOCAL (donde escribió ingestion)
     networks:
       - search-network
     restart: unless-stopped
@@ -39,13 +62,15 @@ services:
       dockerfile: indexing-service/Dockerfile
     depends_on:
       - hazelcast-worker
+      - ingestion-service-worker
     environment:
       - BROKER_URL=tcp://${MASTER_IP}:61616
       - HZ_CLUSTER_NAME=SearchEngine
       - HZ_MEMBERS=${MASTER_IP}:5701
       - DATALAKE_BASE_PATH=/app/datalake
+      - QUEUE_NAME=ingested.document
     volumes:
-      - shared_datalake:/app/datalake
+      - ./datalake:/app/datalake # <--- LEE DE SU DISCO LOCAL (donde escribió ingestion)
     networks:
       - search-network
     restart: unless-stopped
@@ -57,13 +82,15 @@ services:
       dockerfile: indexing-service/Dockerfile
     depends_on:
       - hazelcast-worker
+      - ingestion-service-worker
     environment:
       - BROKER_URL=tcp://${MASTER_IP}:61616
       - HZ_CLUSTER_NAME=SearchEngine
       - HZ_MEMBERS=${MASTER_IP}:5701
       - DATALAKE_BASE_PATH=/app/datalake
+      - QUEUE_NAME=ingested.document
     volumes:
-      - shared_datalake:/app/datalake
+      - ./datalake:/app/datalake # <--- LEE DE SU DISCO LOCAL (donde escribió ingestion)
     networks:
       - search-network
     restart: unless-stopped
@@ -85,13 +112,14 @@ services:
       - search-network
     restart: unless-stopped
 
+
   search-service-2:
     container_name: search-service-2
     build:
       context: .
       dockerfile: search-service/Dockerfile
     ports:
-      - "8082:8080"
+      - "8081:8080"
     depends_on:
       - hazelcast-worker
     environment:
@@ -108,7 +136,7 @@ services:
       context: .
       dockerfile: search-service/Dockerfile
     ports:
-      - "8083:8080"
+      - "8081:8080"
     depends_on:
       - hazelcast-worker
     environment:
@@ -122,11 +150,3 @@ services:
 networks:
   search-network:
     driver: bridge
-
-volumes:
-  shared_datalake:
-    driver: local
-    driver_opts:
-      type: none
-      o:  bind
-      device:  C:/Users/Examen/worker-datalake

@@ -19,7 +19,8 @@ services:
     environment:
       - HZ_CLUSTERNAME=SearchEngine
       - HZ_PUBLIC_ADDRESS=${HOST_IP}:5701
-      - HZ_SEED_MEMBERS=${HOST_IP}:5701,${WORKER1_IP}:5701,${WORKER2_IP}:5701,${WORKER3_IP}:5701,${WORKER4_IP}:5701
+      # Lista de todos los miembros del cluster
+      - HZ_SEED_MEMBERS=${HOST_IP}:5701,${WORKER1_IP}:5701,${WORKER2_IP}:5701
     volumes:
       - ./hazelcast.xml:/opt/hazelcast/config/hazelcast.xml:ro
     networks:
@@ -41,8 +42,9 @@ services:
       - HZ_CLUSTER_NAME=SearchEngine
       - HZ_MEMBERS=hazelcast1:5701
       - DATALAKE_PATH=/app/datalake
+      - AUTO_LOAD_BOOKS=true  # El Master se encarga de descargar
     volumes:
-      - shared_datalake:/app/datalake
+      - ./datalake:/app/datalake  # <--- SE GUARDA EN CARPETA LOCAL
     networks:
       - search-network
     restart: unless-stopped
@@ -66,5 +68,3 @@ networks:
 
 volumes:
   activemq_data:
-  shared_datalake:
-    driver: local

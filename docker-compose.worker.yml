@@ -101,7 +101,7 @@ services:
       context: .
       dockerfile: search-service/Dockerfile
     ports:
-      - "8081:8080"
+      - "8081:8080"  # <--- Puerto 8081 del host → 8080 del contenedor
     depends_on:
       - hazelcast-worker
     environment:
@@ -112,14 +112,13 @@ services:
       - search-network
     restart: unless-stopped
 
-
   search-service-2:
     container_name: search-service-2
     build:
       context: .
       dockerfile: search-service/Dockerfile
     ports:
-      - "8081:8080"
+      - "8082:8080"  # <--- Puerto 8082 del host → 8080 del contenedor
     depends_on:
       - hazelcast-worker
     environment:
@@ -136,7 +135,7 @@ services:
       context: .
       dockerfile: search-service/Dockerfile
     ports:
-      - "8081:8080"
+      - "8083:8080"  # <--- Puerto 8083 del host → 8080 del contenedor
     depends_on:
       - hazelcast-worker
     environment:
@@ -146,6 +145,7 @@ services:
     networks:
       - search-network
     restart: unless-stopped
+
 
 networks:
   search-network:

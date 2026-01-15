@@ -8,7 +8,8 @@ public class LocalDatalakePathResolver implements DatalakePathResolverPort {
     private final String basePath;
 
     public LocalDatalakePathResolver() {
-        this.basePath = "/app/datalake" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        this.basePath = System.getenv().getOrDefault("DATALAKE_BASE_PATH", "/app/datalake" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
+
     }
 
     @Override

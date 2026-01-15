@@ -23,29 +23,34 @@ public class ActiveMQIngestedEventConsumerAdapter implements IngestedEventConsum
                 try {
                     if (message instanceof TextMessage textMessage) {
                         String text = textMessage.getText();
-                        int bookId = Integer.parseInt(text.split("\\|")[0].trim());
+                        String[] parts = text.split("\\|");
+
+                        int bookId = Integer.parseInt(parts[0].trim());
+                        String filePath = (parts.length > 1) ? parts[1].trim() : "";
+
                         IngestionEvent event = new IngestionEvent() {
                             @Override
-                            public int bookId() {return bookId;}
+                            public int bookId() { return bookId; }
+
+                            @Override
+                            public String path() { return filePath; }
 
                             @Override
                             public void acknowledge() {
-                                try {message.acknowledge();}
-                                catch (JMSException e) {throw new RuntimeException(e);}
+                                try { message.acknowledge(); }
+                                catch (JMSException e) { throw new RuntimeException(e); }
                             }
 
                             @Override
                             public void reject() {
-                                try {session.recover();}
-                                catch (JMSException e) {throw new RuntimeException(e);}
+                                try { session.recover(); }
+                                catch (JMSException e) { throw new RuntimeException(e); }
                             }
                         };
                         queue.put(event);
-                    } else {
-
                     }
                 } catch (Exception e) {
-                    throw new RuntimeException("Error processing incoming JMS message", e);
+                    System.err.println("Error parsing JMS message: " + e.getMessage());
                 }
             });
         } catch (JMSException e) {

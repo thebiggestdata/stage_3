@@ -28,10 +28,14 @@ public class IngestDocumentService implements DownloadDocumentProvider {
         try {
             if (bookDownloadLog.isDownloaded(bookId)) return alreadyDownloadedResponse(bookId);
             String response = fetchBook(bookId);
+
             Path savedPath = storageDate.store(bookId, response);
+
             bookDownloadLog.registerDownload(bookId);
-            this.bookIngestedNotifier.provide(bookId);
-            log.info("Event published for book {} after successful replication", bookId);
+
+            this.bookIngestedNotifier.provide(bookId, savedPath.toString());
+
+            log.info("Event published for book {} with path {}", bookId, savedPath);
             return successResponse(bookId, savedPath);
         } catch (Exception e) {
             return errorResponse(bookId, e);

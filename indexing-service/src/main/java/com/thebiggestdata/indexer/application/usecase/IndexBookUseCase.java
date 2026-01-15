@@ -48,19 +48,34 @@ public class IndexBookUseCase {
         int bookId = event.bookId();
         try {
             IMap<Integer, Boolean> processedDocs = hazelcast.getMap("processed-documents");
+
             if (processedDocs.containsKey(bookId)) {
                 logger.info("Document {} already processed, skipping", bookId);
                 event.acknowledge();
                 return;
             }
+
             logger.info("Processing document ID: {}", bookId);
-            String filePath = pathResolver.resolve(bookId);
+
+            String eventPath = event.path();
+            String filePath;
+
+            if (eventPath != null && !eventPath.isEmpty()) {
+                filePath = eventPath;
+                logger.debug("Using path from event: {}", filePath);
+            } else {
+                filePath = pathResolver.resolve(bookId);
+                logger.warn("Path not found in event, fallback to resolver: {}", filePath);
+            }
+
             RawDocument rawDoc = datalakeReader.read(bookId, filePath);
             TokenStream tokenStream = tokenizerPipeline.process(rawDoc);
             Map<String, List<Integer>> postings = postingBuilder.build(tokenStream);
             indexWriter.write(postings);
+
             processedDocs.put(bookId, true);
             event.acknowledge();
+
             logger.info("Successfully indexed document ID: {} with {} unique tokens", bookId, postings.size());
         } catch (Exception e) {
             logger.error("Failed to index document ID: {}", bookId, e);
@@ -68,4 +83,3 @@ public class IndexBookUseCase {
         }
     }
 }
-

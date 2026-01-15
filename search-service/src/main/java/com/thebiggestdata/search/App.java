@@ -1,7 +1,7 @@
 package com.thebiggestdata.search;
 
-import com.hazelcast.config.*;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.thebiggestdata.search.application.usecase.SearchBookUseCase;
 import com.thebiggestdata.search.domain.service.SearchEngine;
@@ -14,42 +14,42 @@ public class App {
     public static void main(String[] args) {
         System.out.println("Starting Search Service...");
 
-        String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "SearchEngine");
-        String membersEnv = System.getenv().getOrDefault("HZ_MEMBERS", "hazelcast1:5701");
+        HazelcastInstance hazelcast = createHazelcastClient();
 
-        Config config = new Config();
+        HazelcastInvertedIndexReaderAdapter indexReader = new HazelcastInvertedIndexReaderAdapter(hazelcast, "inverted-index");
+        SearchEngine searchEngine = new SearchEngine();
+        SearchBookUseCase searchUseCase = new SearchBookUseCase(indexReader, searchEngine);
+
+        SearchController controller = new SearchController(searchUseCase);
+
+        startWebServer(controller);
+    }
+
+    private static HazelcastInstance createHazelcastClient() {
+        String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "search-cluster");
+        String membersEnv = System.getenv().getOrDefault("HZ_MEMBERS", "hazelcast1,hazelcast2,hazelcast3");
+
+        System.out.println("Connecting to Hazelcast Cluster: " + clusterName);
+
+        ClientConfig config = new ClientConfig();
         config.setClusterName(clusterName);
 
-        NetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig()
+                .addAddress(membersEnv.split(","))
+                .setSmartRouting(true)
+                .setRedoOperation(true);
 
-        TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
-        tcpIpConfig.setEnabled(true);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
 
-        for (String member : membersEnv.split(",")) {
-            tcpIpConfig.addMember(member.trim());
-        }
+        System.out.println("Search Service connected. Members: " + client.getCluster().getMembers());
+        return client;
+    }
 
-        MultiMapConfig multiMapConfig = new MultiMapConfig("inverted-index");
-        multiMapConfig.setBackupCount(2);
-        multiMapConfig.setStatisticsEnabled(true);
-        config.addMultiMapConfig(multiMapConfig);
-
-        System.out.println("Joining Hazelcast cluster...");
-        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(config);
-        System.out.println("Search Service joined cluster: " + hazelcast.getCluster().getMembers());
-
-        var indexReader = new HazelcastInvertedIndexReaderAdapter(hazelcast, "inverted-index");
-        var searchEngine = new SearchEngine();
-        var searchUseCase = new SearchBookUseCase(indexReader, searchEngine);
-
-        Javalin app = Javalin.create().start(8080);
-        var controller = new SearchController(searchUseCase);
+    private static void startWebServer(SearchController controller) {
+        Javalin app = Javalin.create();
         controller.registerRoutes(app);
-
         app.get("/health", ctx -> ctx.result("OK"));
-
-        System.out.println("Search Service started on port 8080");
+        app.start(8080);
+        System.out.println("🌐 Search Service HTTP API running on port 8080");
     }
 }
-

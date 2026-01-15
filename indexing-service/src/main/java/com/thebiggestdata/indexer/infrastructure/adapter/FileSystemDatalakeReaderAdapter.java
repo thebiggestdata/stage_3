@@ -10,7 +10,6 @@ public class FileSystemDatalakeReaderAdapter implements DatalakeReadPort {
 
     @Override
     public RawDocument read(int bookId, String bodyPath) {
-        System.err.println("Intentando leer: {}"+ bodyPath);
         try {
             String body = Files.readString(Path.of(bodyPath));
             return new RawDocument(bookId, body);

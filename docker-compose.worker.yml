@@ -128,5 +128,5 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      o: bind
-      device: Z:/
+      o:  bind
+      device:  C:/Users/Examen/worker-datalake

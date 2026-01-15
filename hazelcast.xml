@@ -8,14 +8,27 @@
 
     <network>
         <port auto-increment="true">5701</port>
+
+        <!-- INTERFAZ PÚBLICA: Permite que otros nodos vean este miembro -->
+        <public-address>${HZ_PUBLIC_ADDRESS}</public-address>
+
         <join>
-            <multicast enabled="false"/>
-            <tcp-ip enabled="true">
-                <member>hazelcast1:5701</member>
-                <member>hazelcast2:5701</member>
-                <member>hazelcast3:5701</member>
+            <!-- MULTICAST: Auto-discovery en LAN -->
+            <multicast enabled="true">
+                <multicast-group>224.2.2.3</multicast-group>
+                <multicast-port>54327</multicast-port>
+                <multicast-time-to-live>32</multicast-time-to-live>
+                <multicast-timeout-seconds>2</multicast-timeout-seconds>
+            </multicast>
+
+            <!-- TCP-IP como backup (si multicast falla) -->
+            <tcp-ip enabled="false">
+                <member-list>
+                    <member>${HZ_SEED_MEMBERS}</member>
+                </member-list>
             </tcp-ip>
         </join>
+
         <rest-api enabled="true">
             <endpoint-group name="HEALTH_CHECK" enabled="true"/>
         </rest-api>
@@ -51,10 +64,11 @@
     </map>
 
     <properties>
-        <property name="hazelcast.wait.seconds.before.join">0</property>
-        <property name="hazelcast.max.no.heartbeat.seconds">10</property>
+        <property name="hazelcast.wait.seconds.before.join">5</property>
+        <property name="hazelcast.max.no.heartbeat.seconds">30</property>
         <property name="hazelcast.logging.type">slf4j</property>
+        <!-- Permite bind a cualquier interfaz -->
+        <property name="hazelcast.socket.bind.any">true</property>
     </properties>
 
 </hazelcast>
-

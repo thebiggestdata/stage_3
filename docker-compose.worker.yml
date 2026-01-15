@@ -1,0 +1,115 @@
+services:
+  # ========================================
+  # HAZELCAST MEMBER (Worker)
+  # ========================================
+  hazelcast-worker:
+    image: hazelcast/hazelcast:5.6.0
+    container_name: hazelcast-worker
+    network_mode: "host"
+    environment:
+      - HZ_CLUSTERNAME=SearchEngine
+      - JAVA_OPTS=-Dhazelcast.config=/opt/hazelcast/config/hazelcast.xml
+      - HZ_PUBLIC_ADDRESS=${HOST_IP}:5701
+      - HZ_SEED_MEMBERS=${MASTER_IP}:5701
+    volumes:
+      - ./hazelcast.xml:/opt/hazelcast/config/hazelcast.xml:ro
+    restart: unless-stopped
+
+  # ========================================
+  # INDEXING SERVICES (3 instancias)
+  # ========================================
+  indexing-service-1:
+    container_name: indexing-service-1
+    build:
+      context: .
+      dockerfile: indexing-service/Dockerfile
+    network_mode: "host"
+    depends_on:
+      - hazelcast-worker
+    environment:
+      - BROKER_URL=tcp://${MASTER_IP}:61616
+      - HZ_CLUSTER_NAME=SearchEngine
+      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
+      - DATALAKE_BASE_PATH=/shared/datalake
+    volumes:
+      - /shared/datalake:/shared/datalake
+    restart: unless-stopped
+
+  indexing-service-2:
+    container_name: indexing-service-2
+    build:
+      context: .
+      dockerfile: indexing-service/Dockerfile
+    network_mode: "host"
+    depends_on:
+      - hazelcast-worker
+    environment:
+      - BROKER_URL=tcp://${MASTER_IP}:61616
+      - HZ_CLUSTER_NAME=SearchEngine
+      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
+      - DATALAKE_BASE_PATH=/shared/datalake
+    volumes:
+      - /shared/datalake:/shared/datalake
+    restart: unless-stopped
+
+  indexing-service-3:
+    container_name: indexing-service-3
+    build:
+      context: .
+      dockerfile: indexing-service/Dockerfile
+    network_mode: "host"
+    depends_on:
+      - hazelcast-worker
+    environment:
+      - BROKER_URL=tcp://${MASTER_IP}:61616
+      - HZ_CLUSTER_NAME=SearchEngine
+      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
+      - DATALAKE_BASE_PATH=/shared/datalake
+    volumes:
+      - /shared/datalake:/shared/datalake
+    restart: unless-stopped
+
+  # ========================================
+  # SEARCH SERVICES (3 instancias)
+  # ========================================
+  search-service-1:
+    container_name: search-service-1
+    build:
+      context: .
+      dockerfile: search-service/Dockerfile
+    network_mode: "host"
+    depends_on:
+      - hazelcast-worker
+    environment:
+      - HZ_CLUSTER_NAME=SearchEngine
+      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
+      - SERVER_PORT=8081
+    restart: unless-stopped
+
+  search-service-2:
+    container_name: search-service-2
+    build:
+      context: .
+      dockerfile: search-service/Dockerfile
+    network_mode: "host"
+    depends_on:
+      - hazelcast-worker
+    environment:
+      - HZ_CLUSTER_NAME=SearchEngine
+      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
+      - SERVER_PORT=8082
+    restart: unless-stopped
+
+  search-service-3:
+    container_name: search-service-3
+    build:
+      context: .
+      dockerfile: search-service/Dockerfile
+    network_mode: "host"
+    depends_on:
+      - hazelcast-worker
+    environment:
+      - HZ_CLUSTER_NAME=SearchEngine
+      - HZ_MEMBERS=${MASTER_IP}:5701,${HOST_IP}:5701
+      - SERVER_PORT=8083
+    restart: unless-stopped

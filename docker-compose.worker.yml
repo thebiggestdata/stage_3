@@ -129,4 +129,4 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: //MASTER_IP/datalake  # SMB share del master
+      device: Z:/

@@ -3,7 +3,7 @@
 # ========================================
 # NFS SETUP SCRIPT
 # ========================================
-# Ejecutar en MASTER (192.168.1.10)
+# Ejecutar en MASTER (ip_completa)
 # ========================================
 
 set -e
@@ -22,7 +22,7 @@ sudo chown -R nobody:nogroup /shared/datalake
 sudo chmod 777 /shared/datalake
 
 # Configurar exports
-echo "/shared/datalake 192.168.1.0/24(rw,sync,no_subtree_check,no_root_squash)" | sudo tee -a /etc/exports
+echo "/shared/datalake ip_sin_last_.0/24(rw,sync,no_subtree_check,no_root_squash)" | sudo tee -a /etc/exports
 
 # Aplicar configuración
 sudo exportfs -a
@@ -36,6 +36,6 @@ echo "   Run on WORKER nodes:"
 echo "========================================="
 echo "sudo apt install -y nfs-common"
 echo "sudo mkdir -p /shared/datalake"
-echo "sudo mount -t nfs 192.168.1.10:/shared/datalake /shared/datalake"
+echo "sudo mount -t nfs ip_completa:/shared/datalake /shared/datalake"
 echo "# Add to /etc/fstab for persistence:"
-echo "192.168.1.10:/shared/datalake /shared/datalake nfs defaults 0 0"
+echo "ip_completa:/shared/datalake /shared/datalake nfs defaults 0 0"

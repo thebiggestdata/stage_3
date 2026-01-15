@@ -26,10 +26,11 @@ public class App {
     }
 
     private static HazelcastInstance createHazelcastClient() {
-        String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "search-cluster");
-        String membersEnv = System.getenv().getOrDefault("HZ_MEMBERS", "hazelcast1,hazelcast2,hazelcast3");
+        String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "SearchEngine");
+        String membersEnv = System.getenv().getOrDefault("HZ_MEMBERS", "localhost:5701");
 
         System.out.println("Connecting to Hazelcast Cluster: " + clusterName);
+        System.out.println("Members: " + membersEnv);
 
         ClientConfig config = new ClientConfig();
         config.setClusterName(clusterName);
@@ -46,10 +47,13 @@ public class App {
     }
 
     private static void startWebServer(SearchController controller) {
+        int port = Integer.parseInt(System.getenv().getOrDefault("SERVER_PORT", "8080"));
+
         Javalin app = Javalin.create();
         controller.registerRoutes(app);
         app.get("/health", ctx -> ctx.result("OK"));
-        app.start(8080);
-        System.out.println("🌐 Search Service HTTP API running on port 8080");
+        app.start(port);
+
+        System.out.println("🌐 Search Service HTTP API running on port " + port);
     }
 }

@@ -1,12 +1,9 @@
-# Simple Dockerfile - uses pre-built JAR
-# IMPORTANT: Run 'mvn clean package -DskipTests' locally before docker-compose!
-FROM eclipse-temurin:17-jre
+# Dockerfile - uses cached base image that already has Java
+FROM stage_3-indexing-service:latest
 
-WORKDIR /app
-
-# Copy pre-built JAR
-COPY indexing-service/target/indexing-service-*.jar /app/app.jar
+# Copy our new pre-built JAR over the old one
+COPY indexing-service/target/indexing-service-*.jar /app/indexing-service/target/indexing-service-1.0.0.jar
 
 EXPOSE 7002 5702
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+CMD ["java", "-jar", "target/indexing-service-1.0.0.jar"]

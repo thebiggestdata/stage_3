@@ -6,9 +6,9 @@
 # ============================================================================
 
 services:
-  # ActiveMQ Message Broker
+  # ActiveMQ Message Broker - using cached image
   activemq:
-    image: apache/activemq-classic:5.18.3
+    image: rmohr/activemq:latest
     container_name: activemq
     network_mode: host
     restart: unless-stopped

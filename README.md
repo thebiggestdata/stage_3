@@ -63,29 +63,29 @@ tcpIpConfig.addMember("192.168.1.12:5701");  // IP del Worker 2
 
 ```bash
 # Sintaxis básica
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Master [número_de_tareas]
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Master [número_de_tareas]
 
 # Ejemplo con 100 tareas (por defecto)
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Master
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Master
 
 # Ejemplo con 500 tareas
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Master 500
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Master 500
 ```
 
 ### 2. Ejecutar Workers (en terminales separadas o diferentes máquinas)
 
 ```bash
 # Sintaxis básica
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Worker [id_worker]
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Worker [id_worker]
 
 # Worker 1
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Worker WORKER-1
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Worker WORKER-1
 
 # Worker 2
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Worker WORKER-2
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Worker WORKER-2
 
 # Worker 3
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Worker WORKER-3
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Worker WORKER-3
 ```
 
 Si no se especifica un ID, se generará automáticamente.
@@ -96,7 +96,7 @@ Si no se especifica un ID, se generará automáticamente.
 ```bash
 cd /home/runner/work/stage_3/stage_3
 mvn clean package
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Master 200
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Master 200
 ```
 
 Verás:
@@ -110,12 +110,12 @@ Press ENTER when workers are ready, or wait 5 seconds...
 
 ### Paso 2: Abrir Terminal 2 (Worker 1)
 ```bash
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Worker WORKER-1
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Worker WORKER-1
 ```
 
 ### Paso 3: Abrir Terminal 3 (Worker 2)
 ```bash
-java -cp target/stage3-hazelcast-1.0.0.jar:~/.m2/repository/com/hazelcast/hazelcast/5.3.6/hazelcast-5.3.6.jar com.bigdata.stage3.Worker WORKER-2
+java -cp target/stage3-hazelcast-1.0.0-with-dependencies.jar com.bigdata.stage3.Worker WORKER-2
 ```
 
 ### Paso 4: Iniciar Procesamiento

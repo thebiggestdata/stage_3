@@ -7,54 +7,39 @@
     <cluster-name>SearchEngine</cluster-name>
 
     <network>
-        <port auto-increment="true">5701</port>
+        <port auto-increment="false">5701</port>
+        <public-address>${HZ_PUBLIC_ADDRESS}</public-address>
+
         <join>
             <multicast enabled="false"/>
             <tcp-ip enabled="true">
-                <member>hazelcast1:5701</member>
-                <member>hazelcast2:5701</member>
-                <member>hazelcast3:5701</member>
+                <member-list>
+                    <member>${HZ_SEED_MEMBERS}</member>
+                </member-list>
             </tcp-ip>
         </join>
-        <rest-api enabled="true">
-            <endpoint-group name="HEALTH_CHECK" enabled="true"/>
-        </rest-api>
+
+        <!-- AÑADIR ESTO -->
+        <interfaces enabled="true">
+            <interface>0.0.0.0</interface>
+        </interfaces>
     </network>
 
-    <!-- MultiMap para índice invertido -->
     <multimap name="inverted-index">
         <backup-count>2</backup-count>
-        <async-backup-count>0</async-backup-count>
         <statistics-enabled>true</statistics-enabled>
     </multimap>
 
-    <!-- MultiMap para datalake -->
     <multimap name="datalake">
         <backup-count>2</backup-count>
-        <async-backup-count>1</async-backup-count>
     </multimap>
 
-    <!-- Map para control de replicación -->
     <map name="replication-count">
         <backup-count>2</backup-count>
     </map>
 
-    <!-- Map para documentos procesados (idempotencia) -->
     <map name="processed-documents">
         <backup-count>2</backup-count>
-        <time-to-live-seconds>0</time-to-live-seconds>
     </map>
-
-    <!-- Map para locks -->
-    <map name="book-locks">
-        <backup-count>2</backup-count>
-    </map>
-
-    <properties>
-        <property name="hazelcast.wait.seconds.before.join">0</property>
-        <property name="hazelcast.max.no.heartbeat.seconds">10</property>
-        <property name="hazelcast.logging.type">slf4j</property>
-    </properties>
 
 </hazelcast>
-

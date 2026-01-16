@@ -1,0 +1,43 @@
+services:
+  hazelcast-worker:
+    image: hazelcast/hazelcast:5.6.0
+    container_name: hazelcast-worker
+    ports:
+      - "5701:5701"
+    environment:
+      - HZ_CLUSTERNAME=SearchEngine
+    networks:
+      - search-network
+
+  indexing-service:
+    container_name: indexing-service
+    build:
+      context: .
+      dockerfile: indexing-service/Dockerfile
+    depends_on:
+      - hazelcast-worker
+    environment:
+      - BROKER_URL=tcp://${MASTER_IP}:61616
+      - HZ_CLUSTER_NAME=SearchEngine
+      - HZ_MEMBERS=${MASTER_IP}:5701
+    networks:
+      - search-network
+
+  search-service:
+    container_name: search-service
+    build:
+      context: .
+      dockerfile: search-service/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - hazelcast-worker
+    environment:
+      - HZ_CLUSTER_NAME=SearchEngine
+      - HZ_MEMBERS=${MASTER_IP}:5701
+    networks:
+      - search-network
+
+networks:
+  search-network:
+    driver: bridge

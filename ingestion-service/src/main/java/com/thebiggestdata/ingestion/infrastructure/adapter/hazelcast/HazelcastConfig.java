@@ -1,38 +1,24 @@
 package com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HazelcastConfig {
-    private static final Logger logger = LoggerFactory.getLogger(HazelcastConfig.class);
 
     public HazelcastInstance initHazelcast(String clusterName) {
-        ClientConfig config = new ClientConfig();
+        Config config = new Config();
         config.setClusterName(clusterName);
 
-        String membersEnv = System.getenv("HZ_MEMBERS");
-        if (membersEnv != null && !membersEnv.isEmpty()) {
-            String[] members = membersEnv.split(",");
-            config.getNetworkConfig().addAddress(members);
-            logger.info("Configured Hazelcast members addresses: {}", (Object) members);
-        } else {
-            config.getNetworkConfig().addAddress("hazelcast1", "hazelcast2", "hazelcast3");
-            logger.warn("HZ_MEMBERS not set. Using defaults: hazelcast1, hazelcast2, hazelcast3");
+        String members = System.getenv().getOrDefault("HZ_MEMBERS", "localhost:5701");
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        joinConfig.getMulticastConfig().setEnabled(false);
+        joinConfig.getTcpIpConfig().setEnabled(true);
+        for (String member : members.split(",")) {
+            joinConfig.getTcpIpConfig().addMember(member.trim());
         }
 
-        config.getNetworkConfig().setSmartRouting(true);
-        config.getNetworkConfig().setRedoOperation(true);
-
-        logger.info("Connecting to Hazelcast cluster '{}' as CLIENT...", clusterName);
-
-        HazelcastInstance instance = HazelcastClient.newHazelcastClient(config);
-
-        logger.info("Hazelcast Client connected successfully");
-        logger.info("Cluster members view: {}", instance.getCluster().getMembers());
-
-        return instance;
+        return Hazelcast.newHazelcastInstance(config);
     }
 }

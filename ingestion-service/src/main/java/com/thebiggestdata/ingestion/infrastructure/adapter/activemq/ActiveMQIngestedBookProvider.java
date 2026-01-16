@@ -1,45 +1,44 @@
 package com.thebiggestdata.ingestion.infrastructure.adapter.activemq;
 
+import com.google.gson.Gson;
 import com.thebiggestdata.ingestion.infrastructure.port.DocumentIngestedProvider;
+import com.thebiggestdata.ingestion.model.IngestedDocumentEvent;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ActiveMQIngestedBookProvider implements DocumentIngestedProvider {
-    private static final Logger log = LoggerFactory.getLogger(ActiveMQIngestedBookProvider.class);
-    private final ConnectionFactory connectionFactory;
-    private final boolean enabled;
+    private static final Logger logger = LoggerFactory.getLogger(ActiveMQIngestedBookProvider.class);
+    private static final Gson gson = new Gson();
+    private final String brokerUrl;
 
     public ActiveMQIngestedBookProvider(String brokerUrl) {
-        if (brokerUrl == null || brokerUrl.isEmpty() || brokerUrl.equalsIgnoreCase("disabled")) {
-            this.connectionFactory = null;
-            this.enabled = false;
-        } else {
-            this.connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
-            this.enabled = true;
-        }
+        this.brokerUrl = brokerUrl;
     }
 
     @Override
-    public void provide(int bookId, String filePath) {
-        if (!enabled || connectionFactory == null) return;
-
-        try (Connection connection = connectionFactory.createConnection()) {
+    public void provide(int bookId, String path) {
+        try {
+            ConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
+            Connection connection = factory.createConnection();
             connection.start();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Destination queue = session.createQueue("ingested.document");
-            MessageProducer producer = session.createProducer(queue);
+            Destination destination = session.createQueue("ingested.document");
+            MessageProducer producer = session.createProducer(destination);
 
-            String payload = bookId + "|" + filePath;
-
-            TextMessage message = session.createTextMessage(payload);
+            IngestedDocumentEvent event = new IngestedDocumentEvent(bookId);
+            String json = gson.toJson(event);
+            TextMessage message = session.createTextMessage(json);
             producer.send(message);
 
-            log.info("Sent ActiveMQ message: {}", payload);
+            logger.info("Published ingestion event for book {}", bookId);
+
+            producer.close();
             session.close();
+            connection.close();
         } catch (JMSException e) {
-            log.error("Failed to send message for book {}", bookId, e);
+            logger.error("Failed to publish event for book {}", bookId, e);
         }
     }
 }

@@ -1,17 +1,15 @@
 package com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
+import com.thebiggestdata.ingestion.infrastructure.port.DuplicationProvider;
 import com.thebiggestdata.ingestion.model.DuplicatedBook;
 import com.thebiggestdata.ingestion.model.NodeIdProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HazelcastDuplicationProvider {
+public class HazelcastDuplicationProvider implements DuplicationProvider {
     private static final Logger logger = LoggerFactory.getLogger(HazelcastDuplicationProvider.class);
-    private static final String DATALAKE_MAP = "datalake";
-    private static final String LOCK_MAP = "book-locks";
     private final HazelcastInstance hazelcast;
     private final NodeIdProvider nodeIdProvider;
 
@@ -20,44 +18,11 @@ public class HazelcastDuplicationProvider {
         this.nodeIdProvider = nodeIdProvider;
     }
 
+    @Override
     public void duplicate(int bookId, String header, String body) {
-        IMap<Integer, Boolean> lockMap = hazelcast.getMap(LOCK_MAP);
-        lockMap.lock(bookId);
-        try {
-            MultiMap<Integer, DuplicatedBook> datalake = hazelcast.getMultiMap(DATALAKE_MAP);
-            DuplicatedBook book = new DuplicatedBook(header, body, nodeIdProvider.nodeId());
-            boolean added = datalake.put(bookId, book);
-            if (added) {
-                logger.info("Book {} replicated to cluster from node {}", bookId, nodeIdProvider.nodeId());
-            }
-        } finally {
-            lockMap.unlock(bookId);
-        }
+        MultiMap<Integer, DuplicatedBook> datalake = hazelcast.getMultiMap("datalake");
+        DuplicatedBook book = new DuplicatedBook(header, body, nodeIdProvider.nodeId());
+        datalake.put(bookId, book);
+        logger.info("Book {} stored in RAM datalake from node {}", bookId, nodeIdProvider.nodeId());
     }
-
-    public int duplicateAndWait(int bookId, String header, String body, int requiredReplicas) {
-        duplicate(bookId, header, body);
-        int retries = 0;
-        while (retries < 20) {
-            int count = getReplicaCount(bookId);
-            if (count >= 1) {
-                return count;
-            }
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-            retries++;
-        }
-        logger.warn("Replication timeout for book {} but continuing (Benchmarking Mode)", bookId);
-        return 1;
-    }
-
-    public int getReplicaCount(int bookId) {
-        return hazelcast.getMultiMap(DATALAKE_MAP).get(bookId).size();
-    }
-
-    public HazelcastInstance getHazelcastInstance() {return this.hazelcast;}
 }

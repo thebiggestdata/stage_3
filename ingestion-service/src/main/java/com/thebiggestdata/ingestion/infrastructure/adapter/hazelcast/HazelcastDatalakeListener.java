@@ -49,4 +49,8 @@ public class HazelcastDatalakeListener extends HzlcstEntryListener<Integer, Dupl
         // Ya no escribir en disco, solo actualizar contador
         logger.info("Book {} replicated in RAM from node {}", bookId, replicated.srcNode());
     }
+    public void registerListener() {
+        hazelcast.getMap("datalake").addEntryListener(this, true);
+        logger.info("Datalake listener registered for replication factor {}", replicationFactor);
+    }
 }

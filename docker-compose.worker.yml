@@ -9,18 +9,16 @@ services:
       - HZ_PUBLIC_ADDRESS=${HOST_IP}:5701
       - HZ_SEED_MEMBERS=${MASTER_IP}:5701
     volumes:
-      - ./hazelcast.xml:/opt/hazelcast.xml:ro
+      - ./hazelcast.xml:/opt/hazelcast/config/hazelcast.xml:ro
     networks:
       - search-network
     restart: unless-stopped
 
-  # NECESARIO: Recibe los archivos del Master y los escribe en disco
   ingestion-service-worker:
-    container_name: ingestion-service
+    container_name: ingestion-worker
     build:
       context: .
       dockerfile: ingestion-service/Dockerfile
-    # No exponemos puerto 7001 para evitar conflictos, o usamos uno distinto si quieres debuggear
     depends_on:
       - hazelcast-worker
     environment:
@@ -28,9 +26,10 @@ services:
       - HZ_CLUSTER_NAME=SearchEngine
       - HZ_MEMBERS=${MASTER_IP}:5701
       - DATALAKE_PATH=/app/datalake
-      - AUTO_LOAD_BOOKS=false # El worker NO descarga, solo sincroniza
+      - REPLICATION_FACTOR=3 # ADD THIS
+      - AUTO_LOAD_BOOKS=false
     volumes:
-      - ./datalake:/app/datalake # <--- ESCRIBE EN SU DISCO LOCAL
+        - ./datalake:/app/datalake
     networks:
       - search-network
     restart: unless-stopped
@@ -47,7 +46,7 @@ services:
       - BROKER_URL=tcp://${MASTER_IP}:61616
       - HZ_CLUSTER_NAME=SearchEngine
       - HZ_MEMBERS=${MASTER_IP}:5701
-      - DATALAKE_BASE_PATH=/app/datalake
+      - DATALAKE_PATH=/app/datalake
       - QUEUE_NAME=ingested.document
     volumes:
       - ./datalake:/app/datalake # <--- LEE DE SU DISCO LOCAL (donde escribió ingestion)
@@ -67,7 +66,7 @@ services:
       - BROKER_URL=tcp://${MASTER_IP}:61616
       - HZ_CLUSTER_NAME=SearchEngine
       - HZ_MEMBERS=${MASTER_IP}:5701
-      - DATALAKE_BASE_PATH=/app/datalake
+      - DATALAKE_PATH=/app/datalake
       - QUEUE_NAME=ingested.document
     volumes:
       - ./datalake:/app/datalake # <--- LEE DE SU DISCO LOCAL (donde escribió ingestion)
@@ -87,7 +86,7 @@ services:
       - BROKER_URL=tcp://${MASTER_IP}:61616
       - HZ_CLUSTER_NAME=SearchEngine
       - HZ_MEMBERS=${MASTER_IP}:5701
-      - DATALAKE_BASE_PATH=/app/datalake
+      - DATALAKE_PATH=/app/datalake
       - QUEUE_NAME=ingested.document
     volumes:
       - ./datalake:/app/datalake # <--- LEE DE SU DISCO LOCAL (donde escribió ingestion)

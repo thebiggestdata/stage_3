@@ -19,13 +19,13 @@ services:
     environment:
       - HZ_CLUSTERNAME=SearchEngine
       - HZ_PUBLIC_ADDRESS=${HOST_IP}:5701
-      # Lista de todos los miembros del cluster
       - HZ_SEED_MEMBERS=${HOST_IP}:5701,${WORKER1_IP}:5701,${WORKER2_IP}:5701
     volumes:
       - ./hazelcast.xml:/opt/hazelcast/config/hazelcast.xml:ro
     networks:
       - search-network
-    restart: unless-stopped
+    restart:
+        unless-stopped
 
   ingestion-service:
     container_name: ingestion-service
@@ -42,9 +42,10 @@ services:
       - HZ_CLUSTER_NAME=SearchEngine
       - HZ_MEMBERS=hazelcast1:5701
       - DATALAKE_PATH=/app/datalake
-      - AUTO_LOAD_BOOKS=true  # El Master se encarga de descargar
+      - AUTO_LOAD_BOOKS=true
+      - REPLICATION_FACTOR=3 # ADD THIS
     volumes:
-      - ./datalake:/app/datalake  # <--- SE GUARDA EN CARPETA LOCAL
+        - ./datalake:/app/datalake
     networks:
       - search-network
     restart: unless-stopped

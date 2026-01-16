@@ -38,10 +38,13 @@ public class StorageDocDate implements StorageDocProvider {
         Path headerPath = path.resolve(String.format("%d_header.txt", bookId));
         Path bodyPath = path.resolve(String.format("%d_body.txt", bookId));
 
-        Files.writeString(headerPath, header);
-        Files.writeString(bodyPath, body);
-
-        logger.info("Book {} saved to local partition: {}", bookId, path);
+        try {
+            Files.writeString(headerPath, header);
+            Files.writeString(bodyPath, body);
+            logger.info("Master saved book {} to local disk.", bookId);
+        } catch (IOException e) {
+            logger.warn("Master DISK WRITE FAILED. Proceeding with RAM-only replication for book {}", bookId);
+        }
 
         IMap<Integer, Integer> replicaCount = hazelcastDuplicationProvider
                 .getHazelcastInstance()

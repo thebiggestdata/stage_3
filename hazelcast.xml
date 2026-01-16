@@ -36,10 +36,15 @@
 
     <map name="replication-count">
         <backup-count>2</backup-count>
+        <time-to-live-seconds>86400</time-to-live-seconds> </map>
+
+    <map name="datalake-storage">
+        <backup-count>2</backup-count>
+        <eviction eviction-policy="LRU" max-size-policy="FREE_HEAP_PERCENTAGE" size="20"/>
     </map>
 
     <map name="processed-documents">
         <backup-count>2</backup-count>
+        <time-to-live-seconds>3600</time-to-live-seconds>
     </map>
-
 </hazelcast>

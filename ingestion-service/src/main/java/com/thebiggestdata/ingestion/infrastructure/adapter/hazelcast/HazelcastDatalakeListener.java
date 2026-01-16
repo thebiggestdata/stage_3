@@ -10,8 +10,6 @@ import com.thebiggestdata.ingestion.model.NodeIdProvider;
 import com.thebiggestdata.ingestion.infrastructure.adapter.documentprovider.DateTimePathProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -20,6 +18,7 @@ public class HazelcastDatalakeListener extends HzlcstEntryListener<Integer, Dupl
     private final NodeIdProvider nodeIdProvider;
     private final int replicationFactor;
     private final HazelcastInstance hazelcast;
+    private final String datalakeBasePath = System.getenv().getOrDefault("DATALAKE_PATH", "/app/datalake");
 
     public HazelcastDatalakeListener(HazelcastInstance hazelcast, NodeIdProvider nodeIdProvider, int replicationFactor) {
         this.hazelcast = hazelcast;
@@ -36,36 +35,37 @@ public class HazelcastDatalakeListener extends HzlcstEntryListener<Integer, Dupl
     public void entryAdded(EntryEvent<Integer, DuplicatedBook> event) {
         DuplicatedBook replicated = event.getValue();
         int bookId = event.getKey();
-        if (replicated == null || replicated.srcNode() == null) {
-            logger.warn("Skipping event for book {}: srcNode is null", bookId);
-            return;
-        }
+        if (replicated == null || replicated.srcNode() == null) return;
         if (replicated.srcNode().equals(nodeIdProvider.nodeId())) return;
         IMap<Integer, Integer> replicaCount = hazelcast.getMap("replication-count");
         replicaCount.lock(bookId);
         try {
             int current = replicaCount.getOrDefault(bookId, 0);
-            if (current >= replicationFactor) {
-                logger.debug("Book {} already has {} replicas, skipping", bookId, current);
-                return;
+            if (current < replicationFactor) {
+
+                boolean savedToDisk = saveRetrievedBook(bookId, replicated.header(), replicated.body());
+
+                if (savedToDisk) logger.info("Book {} materialized to disk and RAM.", bookId);
+                else logger.warn("PERMISSIONS FAIL: Book {} kept in RAM ONLY.", bookId);
+
+                replicaCount.put(bookId, current + 1);
             }
-            replicaCount.put(bookId, current + 1);
-            logger.info("Book {} replica count: {}/{}", bookId, current + 1, replicationFactor);
         } finally {replicaCount.unlock(bookId);}
-        saveRetrievedBook(bookId, replicated.header(), replicated.body());
     }
 
-    public void saveRetrievedBook(int bookId, String header, String body) {
+    public boolean saveRetrievedBook(int bookId, String header, String body) {
         try {
-            DateTimePathProvider dateTimePathProvider = new DateTimePathProvider("datalake");
+            DateTimePathProvider dateTimePathProvider = new DateTimePathProvider(this.datalakeBasePath);
             Path path = dateTimePathProvider.provide();
-            Path headerPath = path.resolve(String.format("%d_header.txt", bookId));
-            Path contentPath = path.resolve(String.format("%d_body.txt", bookId));
+            if (!Files.exists(path)) Files.createDirectories(path);
+            Path headerPath = path.resolve(bookId + "_header.txt");
+            Path contentPath = path.resolve(bookId + "_body.txt");
             Files.writeString(headerPath, header);
             Files.writeString(contentPath, body);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            return true;
+        } catch (Exception e) {
+            logger.error("Disk write failed for book {}. Reason: {}", bookId, e.getMessage());
+            return false;
         }
     }
-
 }

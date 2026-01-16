@@ -1,170 +1,256 @@
 package com.thebiggestdata.ingestion;
 
-import com.thebiggestdata.ingestion.application.DocIngestionExecutor;
-import com.thebiggestdata.ingestion.application.DocumentProviderController;
-import com.thebiggestdata.ingestion.infrastructure.adapter.activemq.ActiveMQBookConsumer;
 import com.thebiggestdata.ingestion.infrastructure.adapter.activemq.ActiveMQIngestedBookProvider;
-import com.thebiggestdata.ingestion.infrastructure.adapter.api.DocumentStatusService;
-import com.thebiggestdata.ingestion.infrastructure.adapter.api.IngestDocumentService;
-import com.thebiggestdata.ingestion.infrastructure.adapter.api.InitialBookLoader;
-import com.thebiggestdata.ingestion.infrastructure.adapter.api.ListDocumentService;
-import com.thebiggestdata.ingestion.infrastructure.adapter.documentprovider.DateTimePathProvider;
-import com.thebiggestdata.ingestion.infrastructure.adapter.documentprovider.DocumentContentSeparator;
-import com.thebiggestdata.ingestion.infrastructure.adapter.documentprovider.DownloadDocumentLog;
-import com.thebiggestdata.ingestion.infrastructure.adapter.documentprovider.StorageDocDate;
 import com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast.HazelcastConfig;
-import com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast.HazelcastDatalakeListener;
-import com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast.HazelcastDatalakeRecover;
-import com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast.HazelcastDuplicationProvider;
-import com.thebiggestdata.ingestion.infrastructure.port.DocumentStatusProvider;
-import com.thebiggestdata.ingestion.infrastructure.port.DownloadDocumentProvider;
-import com.thebiggestdata.ingestion.infrastructure.port.ListDocumentsProvider;
-import com.thebiggestdata.ingestion.infrastructure.port.PathProvider;
-import com.thebiggestdata.ingestion.model.NodeIdProvider;
+import com.thebiggestdata.ingestion.model.BookContent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Ingestion Service - Downloads books from Gutenberg and stores them in distributed Hazelcast datalake.
+ * This service is a MEMBER of the Hazelcast cluster (not a client).
+ */
 public class App {
     private static final Logger logger = LoggerFactory.getLogger(App.class);
+    private static final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         logger.info("=== Starting Ingestion Service ===");
-        String datalakePath = System.getenv().getOrDefault("DATALAKE_PATH", "/app/datalake");
-        String downloadLogPath = System.getenv().getOrDefault("DOWNLOAD_LOG_PATH", "downloads.log");
+        
+        // Configuration from environment
         String brokerUrl = System.getenv().getOrDefault("BROKER_URL", "tcp://localhost:61616");
         String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "SearchEngine");
-        String nodeName = System.getenv().getOrDefault("NODE_NAME", "ingestion-1");
-        int replicationFactor = getReplicationFactor();
-        logger.info("Configuration:");
-        logger.info("  Datalake path: {}", datalakePath);
-        logger.info("  Download log: {}", downloadLogPath);
-        logger.info("  Broker URL: {}", brokerUrl);
-        logger.info("  Cluster name: {}", clusterName);
-        logger.info("  Node name: {}", nodeName);
-        logger.info("  Replication factor: {}", replicationFactor);
-        ensureDirectoryExists(datalakePath);
-        logger.info("Initializing Hazelcast member...");
+        String nodeId = System.getenv().getOrDefault("NODE_ID", "ingestion-1");
+        int port = Integer.parseInt(System.getenv().getOrDefault("SERVER_PORT", "7001"));
+        
+        logger.info("Configuration: cluster={}, nodeId={}, broker={}, port={}", 
+                clusterName, nodeId, brokerUrl, port);
+
+        // Initialize Hazelcast as MEMBER
         HazelcastConfig hazelcastConfig = new HazelcastConfig();
         HazelcastInstance hazelcast = hazelcastConfig.initHazelcast(clusterName);
-        NodeIdProvider nodeIdProvider = new NodeIdProvider(nodeName);
-        logger.info("Node ID: {}", nodeIdProvider.nodeId());
-        HazelcastDuplicationProvider duplicationProvider = new HazelcastDuplicationProvider(
-                hazelcast,
-                nodeIdProvider
-        );
-        HazelcastDatalakeListener datalakeListener = new HazelcastDatalakeListener(
-                hazelcast,
-                nodeIdProvider,
-                replicationFactor
-        );
-        datalakeListener.registerListener();
-        logger.info("Hazelcast datalake listener registered");
-        PathProvider pathProvider = new DateTimePathProvider(datalakePath);
-        DocumentContentSeparator separator = new DocumentContentSeparator();
-        StorageDocDate storage = new StorageDocDate(pathProvider, separator, duplicationProvider);
-        DownloadDocumentLog downloadLog = new DownloadDocumentLog(downloadLogPath);
+        
+        // Get distributed maps
+        IMap<Integer, BookContent> datalake = hazelcast.getMap("datalake");
+        IMap<Integer, Boolean> downloadLog = hazelcast.getMap("download-log");
+        
+        logger.info("Connected to cluster. Datalake size: {}, Download log size: {}", 
+                datalake.size(), downloadLog.size());
+
+        // Initialize ActiveMQ notifier (can be disabled)
         ActiveMQIngestedBookProvider notifier = new ActiveMQIngestedBookProvider(brokerUrl);
-        DownloadDocumentProvider ingestService = new IngestDocumentService(
-                downloadLog,
-                storage,
-                notifier
-        );
-        ListDocumentsProvider listService = new ListDocumentService(downloadLog);
-        DocumentStatusProvider statusService = new DocumentStatusService(downloadLog);
-        logger.info("Recovering existing data from disk...");
-        HazelcastDatalakeRecover recovery = new HazelcastDatalakeRecover(
-                hazelcast,
-                nodeIdProvider,
-                notifier
-        );
-        recovery.reloadMemoryFromDisk(datalakePath);
-        logger.info("Data recovery completed");
-        logger.info("Starting REST API on port 7001...");
-        DocumentProviderController controller = new DocumentProviderController(
-                ingestService,
-                listService,
-                statusService
-        );
+        
+        // Create Javalin REST API
         Javalin app = Javalin.create(config -> {
             config.http.defaultContentType = "application/json";
-        }).start(7001);
-        app.post("/ingest/{book_id}", controller::ingestDoc);
-        app.get("/ingest/status/{book_id}", controller::status);
-        app.get("/ingest/list", controller::listAllDocs);
-        app.get("/health", ctx -> ctx.result("OK"));
-        logger.info("REST API started successfully");
-        DocIngestionExecutor executor = new DocIngestionExecutor(
-                hazelcast,
-                ingestService,
-                nodeIdProvider
-        );
-        executor.setupBookQueue();
-        executor.startPeriodicExecution();
+        }).start(port);
 
-        logger.info("Starting ActiveMQ consumer...");
-        ActiveMQBookConsumer consumer = new ActiveMQBookConsumer(brokerUrl, ingestService);
-        Thread consumerThread = new Thread(consumer, "ActiveMQ-Consumer");
-        consumerThread.setDaemon(false);
-        consumerThread.start();
-        boolean autoLoad = Boolean.parseBoolean(System.getenv().getOrDefault("AUTO_LOAD_BOOKS", "false"));
-        if (autoLoad) {
-            int startId = Integer.parseInt(System.getenv().getOrDefault("LOAD_START_ID", "1"));
-            int endId = Integer.parseInt(System.getenv().getOrDefault("LOAD_END_ID", "10000"));
-            int threads = Integer.parseInt(System.getenv().getOrDefault("LOAD_THREADS", "10"));
+        // Health check endpoint
+        app.get("/health", ctx -> {
+            Map<String, Object> health = new HashMap<>();
+            health.put("status", "UP");
+            health.put("nodeId", nodeId);
+            health.put("clusterSize", hazelcast.getCluster().getMembers().size());
+            health.put("datalakeSize", datalake.size());
+            ctx.json(health);
+        });
 
-            logger.info("Auto-loading books enabled: {} to {}", startId, endId);
+        // Ingest single book
+        app.post("/ingest/{book_id}", ctx -> {
+            int bookId = Integer.parseInt(ctx.pathParam("book_id"));
+            Map<String, Object> result = ingestBook(bookId, datalake, downloadLog, notifier, nodeId);
+            ctx.json(result);
+        });
 
-            Thread loaderThread = new Thread(() -> {
-                try {
-                    Thread.sleep(5000);
-                    InitialBookLoader loader = new InitialBookLoader(
-                            ingestService,
-                            nodeIdProvider,
-                            startId,
-                            endId,
-                            threads
-                    );
-                    loader.loadBooks();
-                } catch (Exception e) {
-                    logger.error("Error in auto-loader", e);
-                }
-            }, "Book-Auto-Loader");
-            loaderThread.start();
-        }
+        // Get ingestion status
+        app.get("/ingest/status/{book_id}", ctx -> {
+            int bookId = Integer.parseInt(ctx.pathParam("book_id"));
+            Map<String, Object> result = new HashMap<>();
+            result.put("book_id", bookId);
+            result.put("downloaded", downloadLog.containsKey(bookId));
+            result.put("in_datalake", datalake.containsKey(bookId));
+            ctx.json(result);
+        });
 
+        // List all ingested books
+        app.get("/ingest/list", ctx -> {
+            Set<Integer> bookIds = datalake.keySet();
+            Map<String, Object> result = new HashMap<>();
+            result.put("count", bookIds.size());
+            result.put("book_ids", bookIds);
+            ctx.json(result);
+        });
+
+        // Batch ingest endpoint for benchmarking
+        app.post("/ingest/batch", ctx -> {
+            int startId = Integer.parseInt(ctx.queryParam("start") != null ? ctx.queryParam("start") : "1");
+            int endId = Integer.parseInt(ctx.queryParam("end") != null ? ctx.queryParam("end") : "100");
+            int threads = Integer.parseInt(ctx.queryParam("threads") != null ? ctx.queryParam("threads") : "5");
+            
+            // Run async
+            ExecutorService executor = Executors.newFixedThreadPool(threads);
+            AtomicInteger success = new AtomicInteger(0);
+            AtomicInteger failed = new AtomicInteger(0);
+            
+            for (int id = startId; id <= endId; id++) {
+                final int bookId = id;
+                executor.submit(() -> {
+                    try {
+                        Map<String, Object> result = ingestBook(bookId, datalake, downloadLog, notifier, nodeId);
+                        if ("success".equals(result.get("status")) || "already_exists".equals(result.get("status"))) {
+                            success.incrementAndGet();
+                        } else {
+                            failed.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        failed.incrementAndGet();
+                    }
+                });
+            }
+            
+            executor.shutdown();
+            executor.awaitTermination(30, TimeUnit.MINUTES);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("requested", endId - startId + 1);
+            result.put("success", success.get());
+            result.put("failed", failed.get());
+            result.put("datalake_size", datalake.size());
+            ctx.json(result);
+        });
+
+        // Datalake stats
+        app.get("/datalake/stats", ctx -> {
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("total_books", datalake.size());
+            stats.put("cluster_members", hazelcast.getCluster().getMembers().size());
+            stats.put("local_entries", datalake.localKeySet().size());
+            ctx.json(stats);
+        });
+
+        // Shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Shutting down Ingestion Service...");
-            consumer.stop();
             app.stop();
             hazelcast.shutdown();
             logger.info("Shutdown complete");
         }));
-        logger.info("=== Ingestion Service started successfully ===");
+
+        logger.info("=== Ingestion Service started on port {} ===", port);
         logger.info("Cluster members: {}", hazelcast.getCluster().getMembers());
     }
 
-    private static int getReplicationFactor() {
-        String replicationEnv = System.getenv().getOrDefault("REPLICATION_FACTOR", "3");
+    /**
+     * Ingests a single book from Project Gutenberg into the distributed datalake.
+     */
+    private static Map<String, Object> ingestBook(int bookId, 
+                                                   IMap<Integer, BookContent> datalake,
+                                                   IMap<Integer, Boolean> downloadLog,
+                                                   ActiveMQIngestedBookProvider notifier,
+                                                   String nodeId) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("book_id", bookId);
+
         try {
-            return Integer.parseInt(replicationEnv);
-        } catch (NumberFormatException e) {
-            logger.warn("Invalid replication factor: {}, using default 3", replicationEnv);
-            return 3;
+            // Check if already ingested
+            if (datalake.containsKey(bookId)) {
+                result.put("status", "already_exists");
+                result.put("message", "Book already in datalake");
+                return result;
+            }
+
+            // Download from Gutenberg
+            String content = downloadFromGutenberg(bookId);
+            
+            // Separate header and body
+            String[] parts = separateContent(content);
+            String header = parts[0];
+            String body = parts[1];
+
+            // Store in distributed datalake
+            BookContent bookContent = new BookContent(bookId, header, body, nodeId);
+            datalake.put(bookId, bookContent);
+            downloadLog.put(bookId, true);
+
+            // Notify indexing service via ActiveMQ
+            notifier.provide(bookId, "hazelcast://datalake/" + bookId);
+
+            result.put("status", "success");
+            result.put("body_length", body.length());
+            result.put("header_length", header.length());
+            
+            logger.info("Ingested book {} ({} chars)", bookId, body.length());
+
+        } catch (Exception e) {
+            result.put("status", "error");
+            result.put("message", e.getMessage());
+            logger.error("Failed to ingest book {}: {}", bookId, e.getMessage());
         }
+
+        return result;
     }
 
-    private static void ensureDirectoryExists(String path) throws IOException {
-        Path dir = Paths.get(path);
-        if (!Files.exists(dir)) {
-            Files.createDirectories(dir);
-            logger.info("Created directory: {}", dir.toAbsolutePath());
+    /**
+     * Downloads a book from Project Gutenberg.
+     */
+    private static String downloadFromGutenberg(int bookId) throws Exception {
+        String url = "https://www.gutenberg.org/cache/epub/" + bookId + "/pg" + bookId + ".txt";
+        
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(30))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("HTTP " + response.statusCode() + " for book " + bookId);
         }
+        
+        return response.body();
+    }
+
+    /**
+     * Separates book content into header (metadata) and body.
+     */
+    private static String[] separateContent(String content) {
+        String startMarker = "*** START OF";
+        String endMarker = "*** END OF";
+        
+        int startIndex = content.indexOf(startMarker);
+        if (startIndex == -1) {
+            return new String[]{"", content};
+        }
+        
+        int bodyStart = content.indexOf("\n", startIndex) + 1;
+        int bodyEnd = content.indexOf(endMarker);
+        
+        if (bodyEnd == -1) {
+            bodyEnd = content.length();
+        }
+        
+        String header = content.substring(0, startIndex).trim();
+        String body = content.substring(bodyStart, bodyEnd).trim();
+        
+        return new String[]{header, body};
     }
 }

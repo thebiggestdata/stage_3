@@ -1,0 +1,80 @@
+# ============================================================================
+# PC1 - MASTER NODE
+# ============================================================================
+# This PC runs: ActiveMQ + Ingestion + Indexing + Search
+# Run with: docker-compose --env-file .env -f docker-compose-pc1.yml up --build
+# ============================================================================
+
+services:
+  # Message Broker (only on PC1)
+  activemq:
+    image: apache/activemq-classic:5.18.3
+    container_name: activemq
+    ports:
+      - "61616:61616"
+      - "8161:8161"
+    environment:
+      - ACTIVEMQ_ADMIN_LOGIN=admin
+      - ACTIVEMQ_ADMIN_PASSWORD=admin
+    restart: unless-stopped
+    network_mode: host
+
+  # Ingestion Service
+  ingestion:
+    build:
+      context: .
+      dockerfile: ingestion-service/Dockerfile
+    container_name: ingestion-pc1
+    environment:
+      - NODE_ID=ingestion-pc1
+      - SERVER_PORT=7001
+      - HZ_PORT=5701
+      - HZ_CLUSTER_NAME=${HZ_CLUSTER_NAME}
+      - HZ_PUBLIC_ADDRESS=${PC1_IP}:5701
+      - HZ_MEMBERS=${PC1_IP}:5701,${PC1_IP}:5702,${PC1_IP}:5703,${PC2_IP}:5701,${PC2_IP}:5702,${PC2_IP}:5703,${PC3_IP}:5701,${PC3_IP}:5702,${PC3_IP}:5703,${PC4_IP}:5701,${PC4_IP}:5702,${PC4_IP}:5703
+      - BROKER_URL=tcp://localhost:61616
+    depends_on:
+      - activemq
+    restart: unless-stopped
+    network_mode: host
+
+  # Indexing Service  
+  indexing:
+    build:
+      context: .
+      dockerfile: indexing-service/Dockerfile
+    container_name: indexing-pc1
+    environment:
+      - NODE_ID=indexing-pc1
+      - SERVER_PORT=7002
+      - HZ_PORT=5702
+      - HZ_CLUSTER_NAME=${HZ_CLUSTER_NAME}
+      - HZ_PUBLIC_ADDRESS=${PC1_IP}:5702
+      - HZ_MEMBERS=${PC1_IP}:5701,${PC1_IP}:5702,${PC1_IP}:5703,${PC2_IP}:5701,${PC2_IP}:5702,${PC2_IP}:5703,${PC3_IP}:5701,${PC3_IP}:5702,${PC3_IP}:5703,${PC4_IP}:5701,${PC4_IP}:5702,${PC4_IP}:5703
+      - BROKER_URL=tcp://localhost:61616
+      - QUEUE_NAME=ingested.document
+      - WORKER_COUNT=4
+    depends_on:
+      - activemq
+      - ingestion
+    restart: unless-stopped
+    network_mode: host
+
+  # Search Service
+  search:
+    build:
+      context: .
+      dockerfile: search-service/Dockerfile
+    container_name: search-pc1
+    environment:
+      - NODE_ID=search-pc1
+      - SERVER_PORT=7003
+      - HZ_PORT=5703
+      - HZ_CLUSTER_NAME=${HZ_CLUSTER_NAME}
+      - HZ_PUBLIC_ADDRESS=${PC1_IP}:5703
+      - HZ_MEMBERS=${PC1_IP}:5701,${PC1_IP}:5702,${PC1_IP}:5703,${PC2_IP}:5701,${PC2_IP}:5702,${PC2_IP}:5703,${PC3_IP}:5701,${PC3_IP}:5702,${PC3_IP}:5703,${PC4_IP}:5701,${PC4_IP}:5702,${PC4_IP}:5703
+      - SORT_BY=frequency
+    depends_on:
+      - indexing
+    restart: unless-stopped
+    network_mode: host

@@ -1,0 +1,60 @@
+# ============================================================================
+# PC4 - WORKER NODE
+# ============================================================================
+# This PC runs: Ingestion + Indexing + Search (connects to PC1's ActiveMQ)
+# Run with: docker-compose --env-file .env -f docker-compose-pc4.yml up --build
+# ============================================================================
+
+services:
+  # Ingestion Service
+  ingestion:
+    build:
+      context: .
+      dockerfile: ingestion-service/Dockerfile
+    container_name: ingestion-pc4
+    environment:
+      - NODE_ID=ingestion-pc4
+      - SERVER_PORT=7001
+      - HZ_PORT=5701
+      - HZ_CLUSTER_NAME=${HZ_CLUSTER_NAME}
+      - HZ_PUBLIC_ADDRESS=${PC4_IP}:5701
+      - HZ_MEMBERS=${PC1_IP}:5701,${PC1_IP}:5702,${PC1_IP}:5703,${PC2_IP}:5701,${PC2_IP}:5702,${PC2_IP}:5703,${PC3_IP}:5701,${PC3_IP}:5702,${PC3_IP}:5703,${PC4_IP}:5701,${PC4_IP}:5702,${PC4_IP}:5703
+      - BROKER_URL=tcp://${PC1_IP}:61616
+    restart: unless-stopped
+    network_mode: host
+
+  # Indexing Service  
+  indexing:
+    build:
+      context: .
+      dockerfile: indexing-service/Dockerfile
+    container_name: indexing-pc4
+    environment:
+      - NODE_ID=indexing-pc4
+      - SERVER_PORT=7002
+      - HZ_PORT=5702
+      - HZ_CLUSTER_NAME=${HZ_CLUSTER_NAME}
+      - HZ_PUBLIC_ADDRESS=${PC4_IP}:5702
+      - HZ_MEMBERS=${PC1_IP}:5701,${PC1_IP}:5702,${PC1_IP}:5703,${PC2_IP}:5701,${PC2_IP}:5702,${PC2_IP}:5703,${PC3_IP}:5701,${PC3_IP}:5702,${PC3_IP}:5703,${PC4_IP}:5701,${PC4_IP}:5702,${PC4_IP}:5703
+      - BROKER_URL=tcp://${PC1_IP}:61616
+      - QUEUE_NAME=ingested.document
+      - WORKER_COUNT=4
+    restart: unless-stopped
+    network_mode: host
+
+  # Search Service
+  search:
+    build:
+      context: .
+      dockerfile: search-service/Dockerfile
+    container_name: search-pc4
+    environment:
+      - NODE_ID=search-pc4
+      - SERVER_PORT=7003
+      - HZ_PORT=5703
+      - HZ_CLUSTER_NAME=${HZ_CLUSTER_NAME}
+      - HZ_PUBLIC_ADDRESS=${PC4_IP}:5703
+      - HZ_MEMBERS=${PC1_IP}:5701,${PC1_IP}:5702,${PC1_IP}:5703,${PC2_IP}:5701,${PC2_IP}:5702,${PC2_IP}:5703,${PC3_IP}:5701,${PC3_IP}:5702,${PC3_IP}:5703,${PC4_IP}:5701,${PC4_IP}:5702,${PC4_IP}:5703
+      - SORT_BY=frequency
+    restart: unless-stopped
+    network_mode: host

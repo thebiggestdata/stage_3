@@ -24,3 +24,17 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Environment configuration (contains sensitive IPs)
+.env
+
+# Data directories
+datalake/
+indexer/
+datamart/
+metadata/
+activemq-data/
+hazelcast-data-*/
+
+# Docker volumes
+activemq_data/

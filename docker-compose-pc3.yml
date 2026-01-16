@@ -1,0 +1,94 @@
+services:
+  hazelcast-3:
+    image: hazelcast/hazelcast:5.6.0
+    container_name: hazelcast-pc3
+    ports:
+      - "5701:5701"
+    environment:
+      - HZ_CLUSTERNAME=${HZ_CLUSTER_NAME}
+      - HZ_NETWORK_JOIN_TCPIP_ENABLED=true
+      - HZ_NETWORK_JOIN_MULTICAST_ENABLED=false
+      - HZ_NETWORK_JOIN_TCPIP_MEMBERS=${PC1_IP}:5701,${PC2_IP}:5701,${PC3_IP}:5701
+      - HZ_NETWORK_PUBLICADDRESS=${PC3_IP}:5701
+      - JAVA_OPTS=-Xms256m -Xmx512m -Dhazelcast.local.publicAddress=${PC3_IP}:5701
+    networks:
+      - stage3-network
+    restart: unless-stopped
+
+  ingestion-service-3:
+    container_name: ingestion-service-pc3
+    build:
+      context: .
+      dockerfile: ingestion-service/Dockerfile
+    ports:
+      - "7001:7001"
+    depends_on:
+      - hazelcast-3
+    environment:
+      - NODE_ID=ingestion-3
+      - SERVER_PORT=7001
+      - BROKER_ENABLED=true
+      - BROKER_URL=tcp://${PC1_IP}:61616
+      - DATALAKE_DIR=/app/datalake
+      - DATALAKE_REPLICATION_FACTOR=3
+      - DATALAKE_PEERS=http://${PC1_IP}:7001,http://${PC2_IP}:7001,http://${PC3_IP}:7001
+      - HAZELCAST_ENABLED=true
+      - HAZELCAST_MEMBERS=${PC1_IP}:5701,${PC2_IP}:5701,${PC3_IP}:5701
+      - AUTO_LOAD_BOOKS=false
+    volumes:
+      - ./datalake:/app/datalake
+    networks:
+      - stage3-network
+    restart: unless-stopped
+
+  indexer-service-3:
+    container_name: indexer-service-pc3
+    build:
+      context: .
+      dockerfile: indexing-service/Dockerfile
+    ports:
+      - "7002:7002"
+    depends_on:
+      - hazelcast-3
+      - ingestion-service-3
+    environment:
+      - NODE_ID=indexer-3
+      - SERVER_PORT=7002
+      - BROKER_ENABLED=true
+      - BROKER_URL=tcp://${PC1_IP}:61616
+      - HAZELCAST_ENABLED=true
+      - HAZELCAST_CLUSTER_NAME=${HZ_CLUSTER_NAME}
+      - HAZELCAST_MEMBERS=${PC1_IP}:5701,${PC2_IP}:5701,${PC3_IP}:5701
+      - DATALAKE_PATH=/app/datalake
+      - DB_PATH=/app/datamart/datamart.db
+      - LEGACY_TSV_ENABLED=false
+    volumes:
+      - ./datalake:/app/datalake
+      - ./datamart:/app/datamart
+    networks:
+      - stage3-network
+    restart: unless-stopped
+
+  search-service-3:
+    container_name: search-service-pc3
+    build:
+      context: .
+      dockerfile: search-service/Dockerfile
+    ports:
+      - "7003:7003"
+    depends_on:
+      - hazelcast-3
+      - indexer-service-3
+    environment:
+      - NODE_ID=search-3
+      - SERVER_PORT=7003
+      - HAZELCAST_ENABLED=true
+      - HAZELCAST_CLUSTER_NAME=${HZ_CLUSTER_NAME}
+      - HAZELCAST_MEMBERS=${PC1_IP}:5701,${PC2_IP}:5701,${PC3_IP}:5701
+    networks:
+      - stage3-network
+    restart: unless-stopped
+
+networks:
+  stage3-network:
+    driver: bridge

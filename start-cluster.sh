@@ -74,6 +74,14 @@ case $NODE in
         
         docker-compose -f docker-compose-pc1.yml --env-file .env up -d
         
+        if [ $? -ne 0 ]; then
+            echo ""
+            echo -e "${RED}ERROR: Failed to start PC1 services!${NC}"
+            echo -e "${YELLOW}Check docker-compose logs for details:${NC}"
+            echo -e "${GRAY}  docker-compose -f docker-compose-pc1.yml logs${NC}"
+            exit 1
+        fi
+        
         echo ""
         echo -e "${GREEN}PC1 Services Started!${NC}"
         echo ""
@@ -92,6 +100,14 @@ case $NODE in
         
         docker-compose -f docker-compose-pc2.yml --env-file .env up -d
         
+        if [ $? -ne 0 ]; then
+            echo ""
+            echo -e "${RED}ERROR: Failed to start PC2 services!${NC}"
+            echo -e "${YELLOW}Check docker-compose logs for details:${NC}"
+            echo -e "${GRAY}  docker-compose -f docker-compose-pc2.yml logs${NC}"
+            exit 1
+        fi
+        
         echo ""
         echo -e "${GREEN}PC2 Services Started!${NC}"
         ;;
@@ -104,6 +120,14 @@ case $NODE in
         echo ""
         
         docker-compose -f docker-compose-pc3.yml --env-file .env up -d
+        
+        if [ $? -ne 0 ]; then
+            echo ""
+            echo -e "${RED}ERROR: Failed to start PC3 services!${NC}"
+            echo -e "${YELLOW}Check docker-compose logs for details:${NC}"
+            echo -e "${GRAY}  docker-compose -f docker-compose-pc3.yml logs${NC}"
+            exit 1
+        fi
         
         echo ""
         echo -e "${GREEN}PC3 Services Started!${NC}"

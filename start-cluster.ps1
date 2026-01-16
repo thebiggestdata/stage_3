@@ -50,6 +50,14 @@ switch ($Node) {
         
         docker-compose -f docker-compose-pc1.yml --env-file .env up -d
         
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host ""
+            Write-Host "ERROR: Failed to start PC1 services!" -ForegroundColor Red
+            Write-Host "Check docker-compose logs for details:" -ForegroundColor Yellow
+            Write-Host "  docker-compose -f docker-compose-pc1.yml logs" -ForegroundColor Gray
+            exit 1
+        }
+        
         Write-Host ""
         Write-Host "PC1 Services Started!" -ForegroundColor Green
         Write-Host ""
@@ -68,6 +76,14 @@ switch ($Node) {
         
         docker-compose -f docker-compose-pc2.yml --env-file .env up -d
         
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host ""
+            Write-Host "ERROR: Failed to start PC2 services!" -ForegroundColor Red
+            Write-Host "Check docker-compose logs for details:" -ForegroundColor Yellow
+            Write-Host "  docker-compose -f docker-compose-pc2.yml logs" -ForegroundColor Gray
+            exit 1
+        }
+        
         Write-Host ""
         Write-Host "PC2 Services Started!" -ForegroundColor Green
     }
@@ -80,6 +96,14 @@ switch ($Node) {
         Write-Host ""
         
         docker-compose -f docker-compose-pc3.yml --env-file .env up -d
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host ""
+            Write-Host "ERROR: Failed to start PC3 services!" -ForegroundColor Red
+            Write-Host "Check docker-compose logs for details:" -ForegroundColor Yellow
+            Write-Host "  docker-compose -f docker-compose-pc3.yml logs" -ForegroundColor Gray
+            exit 1
+        }
         
         Write-Host ""
         Write-Host "PC3 Services Started!" -ForegroundColor Green

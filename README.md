@@ -62,8 +62,10 @@ This system implements a multi-PC distributed architecture where services are de
 
 - **Hazelcast**: Distributed in-memory data grid for caching and data sharing
 - **ActiveMQ**: Message broker for asynchronous processing
-- **Nginx**: Load balancer for distributing traffic across nodes
+- **Nginx**: Load balancer for distributing traffic across nodes (dynamically configured with PC IPs from .env)
 - **Docker**: Container runtime for all services
+
+**Note**: The Nginx configuration automatically substitutes PC2 and PC3 IP addresses from the .env file at container startup time, enabling proper load balancing across all nodes.
 
 ## Network Requirements
 

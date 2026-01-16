@@ -113,10 +113,14 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro
     depends_on:
       - ingestion-service-1
       - search-service-1
+    environment:
+      - PC2_IP=${PC2_IP}
+      - PC3_IP=${PC3_IP}
+    command: /bin/sh -c "sed 's/PC2_IP_PLACEHOLDER/${PC2_IP}/g; s/PC3_IP_PLACEHOLDER/${PC3_IP}/g' /etc/nginx/templates/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
     networks:
       - stage3-network
     restart: unless-stopped

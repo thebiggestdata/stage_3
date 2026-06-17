@@ -1,9 +1,6 @@
 package com.thebiggestdata.ingestion.application;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.ingestion.infrastructure.port.DocumentStatusProvider;
-import com.thebiggestdata.ingestion.infrastructure.port.DownloadDocumentProvider;
-import com.thebiggestdata.ingestion.infrastructure.port.ListDocumentsProvider;
 import io.javalin.http.Context;
 import java.util.Map;
 

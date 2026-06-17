@@ -1,6 +1,6 @@
-package com.thebiggestdata.ingestion.infrastructure.adapter.documentprovider;
+package com.thebiggestdata.ingestion.infrastructure.adapter.filesystem;
 
-import com.thebiggestdata.ingestion.infrastructure.port.PathProvider;
+import com.thebiggestdata.infrastructure.ports.PathGenerator;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,25 +10,28 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-public class DateTimePathProvider implements PathProvider {
-    private String basePath;
+public class DateTimePathGenerator implements PathGenerator {
+    private final String datalakePath;
 
-    public DateTimePathProvider(String basePath) {
-        this.basePath = basePath;
+    public DateTimePathGenerator(String datalakePath) {
+        this.datalakePath = datalakePath;
     }
 
     @Override
-    public Path provide() {
+    public Path generatePath() throws IOException {
         Instant instant = Instant.now();
         ZoneId zone = ZoneId.of("GMT");
+
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH");
         String dateDirectory = instant.atZone(zone).format(dateFormatter);
         String timeDirectory = instant.atZone(zone).format(timeFormatter);
-        Path date = Paths.get(this.basePath).resolve(Paths.get(dateDirectory));
+
+        Path date = Paths.get(this.datalakePath).resolve(Paths.get(dateDirectory));
         Path time = date.resolve(timeDirectory);
-        try {Files.createDirectories(time);}
-        catch (IOException e) {throw new RuntimeException(e);}
+
+        Files.createDirectories(time);
+
         return time;
     }
 }

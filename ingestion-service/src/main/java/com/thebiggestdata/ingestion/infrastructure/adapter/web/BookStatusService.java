@@ -1,27 +1,28 @@
-package com.thebiggestdata.ingestion.infrastructure.adapter.api;
+package com.thebiggestdata.ingestion.infrastructure.adapter.web;
 
-import com.thebiggestdata.ingestion.infrastructure.port.DocumentStatusProvider;
-import com.thebiggestdata.ingestion.infrastructure.port.DownloadDocumentStatusProvider;
+import com.thebiggestdata.infrastructure.ports.BookDownloadStatusStore;
+import com.thebiggestdata.infrastructure.ports.BookStatusProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class DocumentStatusService implements DocumentStatusProvider {
-    private static final Logger log = LoggerFactory.getLogger(DocumentStatusService.class);
-    private final DownloadDocumentStatusProvider bookDownloadLog;
+public class BookStatusService implements BookStatusProvider {
+    private static final Logger log = LoggerFactory.getLogger(BookStatusService.class);
+    private final BookDownloadStatusStore bookDownloadLog;
 
-    public DocumentStatusService(DownloadDocumentStatusProvider bookDownloadLog) {
+    public BookStatusService(BookDownloadStatusStore bookDownloadLog) {
         this.bookDownloadLog = bookDownloadLog;
     }
 
     @Override
-    public Map<String, Object> status(int bookId) {
+    public Map<String, Object> getBookStatus(int bookId) {
         log.info("status() - Start execution for bookId={}", bookId);
         try {
             boolean isBookAvailable = bookDownloadLog.isDownloaded(bookId);
-            if (isBookAvailable) return successResponse(bookId);
-            else {
+            if (isBookAvailable) {
+                return successResponse(bookId);
+            } else {
                 log.warn("status() - Book {} is not available in datalake", bookId);
                 return notAvailableResponse(bookId);
             }
@@ -37,22 +38,19 @@ public class DocumentStatusService implements DocumentStatusProvider {
         log.info("status() - Book {} is available in datalake", bookId);
         return Map.of(
                 "book_id", bookId,
-                "status", "available"
-        );
+                "status", "available");
     }
 
     private Map<String, Object> notAvailableResponse(int bookId){
         return Map.of(
                 "book_id", bookId,
-                "status", "not_available"
-        );
+                "status", "not_available");
     }
 
     private Map<String, Object> errorResponse(int bookId, String errorMessage){
         return Map.of(
                 "book_id", bookId,
                 "status", "error",
-                "message", errorMessage
-        );
+                "message", errorMessage);
     }
 }

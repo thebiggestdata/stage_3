@@ -1,71 +1,101 @@
 package com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast;
 
-import com.hazelcast.core.EntryEvent;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.multimap.MultiMap;
-import com.thebiggestdata.ingestion.infrastructure.adapter.api.InitialBookLoader;
-import com.thebiggestdata.ingestion.model.DuplicatedBook;
-import com.thebiggestdata.ingestion.model.NodeIdProvider;
-import com.thebiggestdata.ingestion.infrastructure.adapter.documentprovider.DateTimePathProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.thebiggestdata.infrastructure.adapters.filesystem.BookStorageDate;
+import com.thebiggestdata.infrastructure.ports.BookProvider;
+import com.thebiggestdata.model.NodeInformation;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class HazelcastDatalakeListener extends HzlcstEntryListener<Integer, DuplicatedBook> {
-    private static final Logger logger = LoggerFactory.getLogger(InitialBookLoader.class);
-    private final NodeIdProvider nodeIdProvider;
-    private final int replicationFactor;
+public class HazelcastDatalakeListener {
+
+    private final NodeInformation nodeInformation;
     private final HazelcastInstance hazelcast;
+    private final BookProvider bookProvider;
+    private final BookStorageDate bookStorageDate;
+    private final ExecutorService executorService;
+    private volatile boolean active = true;
 
-    public HazelcastDatalakeListener(HazelcastInstance hazelcast, NodeIdProvider nodeIdProvider, int replicationFactor) {
+    public HazelcastDatalakeListener(HazelcastInstance hazelcast, NodeInformation nodeInformation,
+                                     BookProvider bookProvider, BookStorageDate bookStorageDate) {
         this.hazelcast = hazelcast;
-        this.nodeIdProvider = nodeIdProvider;
-        this.replicationFactor = replicationFactor;
+        this.nodeInformation = nodeInformation;
+        this.bookProvider = bookProvider;
+        this.bookStorageDate = bookStorageDate;
+        this.executorService = Executors.newSingleThreadExecutor();
     }
 
     public void registerListener() {
-        MultiMap<Integer, DuplicatedBook> datalake = hazelcast.getMultiMap("datalake");
-        datalake.addEntryListener(this, true);
+        executorService.submit(this::consumeQueue);
     }
 
-    @Override
-    public void entryAdded(EntryEvent<Integer, DuplicatedBook> event) {
-        DuplicatedBook replicated = event.getValue();
-        int bookId = event.getKey();
-        if (replicated == null || replicated.srcNode() == null) {
-            logger.warn("Skipping event for book {}: srcNode is null", bookId);
+    private void consumeQueue() {
+        IQueue<Integer> queue = hazelcast.getQueue("booksToBeReplicated");
+
+        while (active) {
+            try {
+                int bookId = queue.take();
+                processBook(bookId, queue);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void processBook(int bookId, IQueue<Integer> queue) {
+        String myNodeId = nodeInformation.nodeId();
+        IMap<Integer, Set<String>> replicatedNodesMap = hazelcast.getMap("replicatedNodesMap");
+        Set<String> currentOwners = replicatedNodesMap.get(bookId);
+        boolean iAlreadyHaveIt = currentOwners != null && currentOwners.contains(myNodeId);
+
+        if (iAlreadyHaveIt) {
+            try {
+                Thread.sleep(200);
+                queue.put(bookId);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
             return;
         }
-        if (replicated.srcNode().equals(nodeIdProvider.nodeId())) return;
-        IMap<Integer, Integer> replicaCount = hazelcast.getMap("replication-count");
-        replicaCount.lock(bookId);
+
+        saveRetrievedBook(bookId);
+
+        replicatedNodesMap.lock(bookId);
         try {
-            int current = replicaCount.getOrDefault(bookId, 0);
-            if (current >= replicationFactor) {
-                logger.debug("Book {} already has {} replicas, skipping", bookId, current);
-                return;
-            }
-            replicaCount.put(bookId, current + 1);
-            logger.info("Book {} replica count: {}/{}", bookId, current + 1, replicationFactor);
-        } finally {replicaCount.unlock(bookId);}
-        saveRetrievedBook(bookId, replicated.header(), replicated.body());
+            Set<String> nodes = replicatedNodesMap.getOrDefault(bookId, new HashSet<>());
+            nodes.add(myNodeId);
+            replicatedNodesMap.put(bookId, nodes);
+        } finally {
+            replicatedNodesMap.unlock(bookId);
+        }
+
+        updateReplicationLog(bookId);
     }
 
-    public void saveRetrievedBook(int bookId, String header, String body) {
+    private void updateReplicationLog(int bookId) {
+        IMap<Integer, Integer> replicationLog = hazelcast.getMap("replicationLog");
+        replicationLog.lock(bookId);
         try {
-            DateTimePathProvider dateTimePathProvider = new DateTimePathProvider("datalake");
-            Path path = dateTimePathProvider.provide();
-            Path headerPath = path.resolve(String.format("%d_header.txt", bookId));
-            Path contentPath = path.resolve(String.format("%d_body.txt", bookId));
-            Files.writeString(headerPath, header);
-            Files.writeString(contentPath, body);
-        } catch (IOException e) {
+            int count = replicationLog.getOrDefault(bookId, 0);
+            replicationLog.put(bookId, count + 1);
+        } finally {
+            replicationLog.unlock(bookId);
+        }
+    }
+
+    private void saveRetrievedBook(int bookId) {
+        try {
+            this.bookStorageDate.saveBook(bookId, this.bookProvider.getBookContent(bookId));
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-
 }

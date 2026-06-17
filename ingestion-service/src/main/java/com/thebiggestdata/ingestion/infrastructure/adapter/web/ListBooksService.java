@@ -1,24 +1,26 @@
-package com.thebiggestdata.ingestion.infrastructure.adapter.api;
+package com.thebiggestdata.ingestion.infrastructure.adapter.web;
 
-import com.thebiggestdata.ingestion.infrastructure.port.DownloadDocumentStatusProvider;
-import com.thebiggestdata.ingestion.infrastructure.port.ListDocumentsProvider;
+import com.thebiggestdata.infrastructure.ports.BookDownloadStatusStore;
+import com.thebiggestdata.infrastructure.ports.BookListProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Map;
 
-public class ListDocumentService implements ListDocumentsProvider {
-    private static final Logger log = LoggerFactory.getLogger(ListDocumentService.class);
-    private final DownloadDocumentStatusProvider bookDownload;
-    public ListDocumentService(DownloadDocumentStatusProvider bookDownload) {
-        this.bookDownload = bookDownload;
+public class ListBooksService implements BookListProvider {
+    private static final Logger log = LoggerFactory.getLogger(ListBooksService.class);
+    private final BookDownloadStatusStore bookDownloadLog;
+
+    public ListBooksService(BookDownloadStatusStore bookDownloadLog) {
+        this.bookDownloadLog = bookDownloadLog;
     }
 
     @Override
-    public Map<String, Object> list() {
+    public Map<String, Object> getBookList() {
         log.info("list() - Listing books in the datalake");
         try {
-            List<Integer> downloadedBooks = bookDownload.getDownloadedDocs();
+            List<Integer> downloadedBooks = bookDownloadLog.getAllDownloadedBooks();
             return successResponse(downloadedBooks);
         } catch (Exception e) {
             log.error("list() - Error listing books: {}", e.getMessage(), e);
@@ -31,14 +33,12 @@ public class ListDocumentService implements ListDocumentsProvider {
     private Map<String, Object> successResponse(List<Integer> downloadedBooks){
         return Map.of(
                 "count", downloadedBooks.size(),
-                "books", downloadedBooks
-        );
+                "books", downloadedBooks);
     }
 
     private Map<String, Object> errorResponse(String errorMessage){
         return Map.of(
                 "status", "error",
-                "message", errorMessage
-        );
+                "message", errorMessage);
     }
 }

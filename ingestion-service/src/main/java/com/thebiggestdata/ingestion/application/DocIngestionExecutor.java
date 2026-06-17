@@ -2,8 +2,6 @@ package com.thebiggestdata.ingestion.application;
 
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
-import com.thebiggestdata.ingestion.infrastructure.port.DownloadDocumentProvider;
-import com.thebiggestdata.ingestion.model.NodeIdProvider;
 
 import java.util.Map;
 import java.util.concurrent.Executors;

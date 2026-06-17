@@ -1,4 +1,4 @@
-package java.com.thebiggestdata.ingestion; // Ojo a la raíz actual
+package java.com.thebiggestdata.ingestion;
 
 import com.thebiggestdata.ingestion.application.usecases.ingestionservice.BookIngestionPeriodicExecutor;
 import com.thebiggestdata.ingestion.application.usecases.ingestionservice.IngestBook;
@@ -17,7 +17,6 @@ import com.thebiggestdata.ingestion.infrastructure.adapter.activemq.ActiveMQInge
 import com.thebiggestdata.ingestion.infrastructure.adapter.bookprovider.*;
 import com.thebiggestdata.ingestion.infrastructure.adapter.scheduler.PeriodicScheduler;
 
-// AQUÍ ESTÁ EL CAMBIO CLAVE (sin la 's' final y con la raíz actual):
 import com.thebiggestdata.ingestion.infrastructure.port.*;
 
 import io.javalin.Javalin;

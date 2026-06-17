@@ -1,6 +1,6 @@
 package com.thebiggestdata.ingestion.infrastructure.port;
 
-import com.thebiggestdata.model.BookContent;
+import com.thebiggestdata.ingestion.model.BookContent;
 
 public interface Datalake {
     void save(int bookId, BookContent content);

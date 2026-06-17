@@ -1,4 +1,4 @@
-package com.thebiggestdata.model;
+package com.thebiggestdata.ingestion.model;
 
 import java.time.Instant;
 

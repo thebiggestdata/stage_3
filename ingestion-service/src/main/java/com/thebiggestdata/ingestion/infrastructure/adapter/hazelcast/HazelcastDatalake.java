@@ -2,8 +2,8 @@ package com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.thebiggestdata.infrastructure.ports.Datalake;
-import com.thebiggestdata.model.BookContent;
+import com.thebiggestdata.ingestion.infrastructure.port.Datalake;
+import com.thebiggestdata.ingestion.model.BookContent;
 
 public class HazelcastDatalake implements Datalake {
 

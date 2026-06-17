@@ -3,8 +3,8 @@ package com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.thebiggestdata.infrastructure.ports.ReplicationExecuter;
-import com.thebiggestdata.model.NodeInformation;
+import com.thebiggestdata.ingestion.infrastructure.port.ReplicationExecuter;
+import com.thebiggestdata.ingestion.model.NodeInformation;
 
 import java.util.HashSet;
 import java.util.Set;

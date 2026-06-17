@@ -1,4 +1,4 @@
-package com.thebiggestdata.application.usecases.ingestionservice;
+package com.thebiggestdata.ingestion.application.usecases.ingestionservice;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

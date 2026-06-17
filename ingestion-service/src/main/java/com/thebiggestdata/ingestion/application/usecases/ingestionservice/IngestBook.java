@@ -1,7 +1,7 @@
-package com.thebiggestdata.application.usecases.ingestionservice;
+package com.thebiggestdata.ingestion.application.usecases.ingestionservice;
 
-import com.thebiggestdata.infrastructure.ports.*;
-import com.thebiggestdata.model.BookContent;
+import com.thebiggestdata.ingestion.infrastructure.port.*;
+import com.thebiggestdata.ingestion.model.BookContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

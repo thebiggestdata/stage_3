@@ -2,7 +2,7 @@ package com.thebiggestdata.ingestion.infrastructure.adapter.bookprovider;
 
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
-import com.thebiggestdata.infrastructure.ports.BookDownloadStatusStore;
+import com.thebiggestdata.ingestion.infrastructure.port.BookDownloadStatusStore;
 
 import java.util.ArrayList;
 import java.util.List;

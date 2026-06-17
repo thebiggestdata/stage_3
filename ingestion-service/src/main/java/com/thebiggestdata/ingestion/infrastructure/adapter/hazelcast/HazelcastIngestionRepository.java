@@ -4,7 +4,7 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.thebiggestdata.infrastructure.ports.IngestionQueueRepository;
+import com.thebiggestdata.ingestion.infrastructure.port.IngestionQueueRepository;
 
 import java.util.concurrent.TimeUnit;
 

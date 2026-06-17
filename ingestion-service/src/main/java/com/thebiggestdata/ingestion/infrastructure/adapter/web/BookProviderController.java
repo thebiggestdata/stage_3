@@ -1,9 +1,9 @@
 package com.thebiggestdata.ingestion.infrastructure.adapter.web;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.application.usecases.ingestionservice.IngestBook;
-import com.thebiggestdata.infrastructure.ports.BookListProvider;
-import com.thebiggestdata.infrastructure.ports.BookStatusProvider;
+import com.thebiggestdata.ingestion.application.usecases.ingestionservice.IngestBook;
+import com.thebiggestdata.ingestion.infrastructure.port.BookListProvider;
+import com.thebiggestdata.ingestion.infrastructure.port.BookStatusProvider;
 import io.javalin.http.Context;
 
 import java.util.Map;

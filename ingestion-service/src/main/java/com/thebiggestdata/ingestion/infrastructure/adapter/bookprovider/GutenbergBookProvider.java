@@ -1,6 +1,6 @@
 package com.thebiggestdata.ingestion.infrastructure.adapter.bookprovider;
 
-import com.thebiggestdata.infrastructure.ports.BookProvider;
+import com.thebiggestdata.ingestion.infrastructure.port.BookProvider;
 
 import java.io.IOException;
 

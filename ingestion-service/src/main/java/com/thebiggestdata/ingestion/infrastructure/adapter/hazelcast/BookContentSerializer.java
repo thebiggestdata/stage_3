@@ -3,7 +3,7 @@ package com.thebiggestdata.ingestion.infrastructure.adapter.hazelcast;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import com.thebiggestdata.model.BookContent;
+import com.thebiggestdata.ingestion.model.BookContent;
 
 public class BookContentSerializer implements CompactSerializer<BookContent> {
 

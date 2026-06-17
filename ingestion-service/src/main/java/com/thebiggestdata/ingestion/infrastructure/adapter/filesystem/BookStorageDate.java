@@ -1,7 +1,7 @@
 package com.thebiggestdata.ingestion.infrastructure.adapter.filesystem;
 
-import com.thebiggestdata.infrastructure.ports.BookStorage;
-import com.thebiggestdata.infrastructure.ports.PathGenerator;
+import com.thebiggestdata.ingestion.infrastructure.port.BookStorage;
+import com.thebiggestdata.ingestion.infrastructure.port.PathGenerator;
 
 import java.io.IOException;
 import java.nio.file.Files;

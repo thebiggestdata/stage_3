@@ -1,4 +1,4 @@
-package com.thebiggestdata.search.infrastructure.adapter.hazelcast;
+package com.thebiggestdata.search.infrastructure.adapters.hazelcast;
 
 import com.thebiggestdata.search.model.BookMetadata;
 import com.hazelcast.nio.serialization.compact.CompactReader;

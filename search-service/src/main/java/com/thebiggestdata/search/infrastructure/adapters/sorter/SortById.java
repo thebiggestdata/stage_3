@@ -1,4 +1,4 @@
-package com.thebiggestdata.search.infrastructure.adapter.sorter;
+package com.thebiggestdata.search.infrastructure.adapters.sorter;
 
 import com.thebiggestdata.search.infrastructure.ports.SortingStrategy;
 import com.thebiggestdata.search.model.SearchResult;

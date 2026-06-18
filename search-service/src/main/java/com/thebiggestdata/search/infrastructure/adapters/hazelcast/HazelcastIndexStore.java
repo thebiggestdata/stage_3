@@ -1,4 +1,4 @@
-package com.thebiggestdata.search.infrastructure.adapter.hazelcast;
+package com.thebiggestdata.search.infrastructure.adapters.hazelcast;
 
 import com.thebiggestdata.search.infrastructure.ports.IndexStore;
 import com.hazelcast.core.HazelcastInstance;

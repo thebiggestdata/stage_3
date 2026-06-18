@@ -1,11 +1,11 @@
 package com.thebiggestdata.search.application.usecase.searchservice;
 
-import com.thebiggestdata.model.SearchCriteria;
-import com.thebiggestdata.model.BookMetadata;
-import com.thebiggestdata.model.SearchResult;
-import com.thebiggestdata.infrastructure.ports.BookSearch;
-import com.thebiggestdata.infrastructure.ports.MetadataStore;
-import com.thebiggestdata.infrastructure.ports.SortingStrategy;
+import com.thebiggestdata.search.model.SearchCriteria;
+import com.thebiggestdata.search.model.BookMetadata;
+import com.thebiggestdata.search.model.SearchResult;
+import com.thebiggestdata.search.infrastructure.ports.BookSearch;
+import com.thebiggestdata.search.infrastructure.ports.MetadataStore;
+import com.thebiggestdata.search.infrastructure.ports.SortingStrategy;
 
 import java.util.*;
 import java.util.logging.Logger;

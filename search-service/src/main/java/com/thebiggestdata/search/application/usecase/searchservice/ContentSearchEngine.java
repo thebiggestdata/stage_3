@@ -1,6 +1,6 @@
 package com.thebiggestdata.search.application.usecase.searchservice;
 
-import com.thebiggestdata.infrastructure.ports.IndexStore;
+import com.thebiggestdata.search.infrastructure.ports.IndexStore;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -70,5 +70,4 @@ public class ContentSearchEngine {
 		);
 		return frequencySum;
 	}
-}public class ContentSearchEngine {
 }

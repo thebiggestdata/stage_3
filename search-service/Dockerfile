@@ -1,19 +1,11 @@
-FROM maven:3.9-eclipse-temurin-17
-
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-COPY pom.xml /app/pom.xml
+# Copia el jar compilado
+COPY target/search-service-1.0-SNAPSHOT.jar app.jar
 
-RUN mvn -N install
+# Expone los puertos distribuidos y el de la API
+EXPOSE 5703 5702 5701 7003
 
-COPY search-service/pom.xml /app/search-service/pom.xml
-
-COPY search-service/src /app/search-service/src
-
-WORKDIR /app/search-service
-
-RUN mvn -q -e -DskipTests package
-
-CMD ["java", "-jar", "target/search-service-1.0-SNAPSHOT.jar"]
-
-
+# Al ser un JAR empaquetado con Shade, esto es lo único que necesitas para arrancar
+ENTRYPOINT ["java", "-cp", "app.jar", "com.thebiggestdata.Main"]

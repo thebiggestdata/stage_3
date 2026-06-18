@@ -1,6 +1,7 @@
 package com.thebiggestdata.search.infrastructure.adapters.web;
 
 import com.thebiggestdata.search.infrastructure.ports.BookSearch;
+import com.thebiggestdata.search.model.SearchCriteria;
 import com.thebiggestdata.search.model.SearchResult;
 import io.javalin.http.Context;
 

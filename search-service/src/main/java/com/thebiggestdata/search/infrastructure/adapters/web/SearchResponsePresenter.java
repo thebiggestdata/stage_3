@@ -1,5 +1,6 @@
 package com.thebiggestdata.search.infrastructure.adapters.web;
 
+import com.thebiggestdata.search.model.SearchCriteria;
 import com.thebiggestdata.search.model.SearchResult;
 
 import java.util.LinkedHashMap;

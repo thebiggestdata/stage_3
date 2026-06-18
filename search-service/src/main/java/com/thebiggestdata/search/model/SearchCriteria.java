@@ -1,4 +1,4 @@
 package com.thebiggestdata.search.model;
 
-public class SearchCriteria {
+public record SearchCriteria(String query, String author, String language, Integer year) {
 }

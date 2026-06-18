@@ -1,19 +1,5 @@
-FROM maven:3.9-eclipse-temurin-17
-
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
-
-COPY pom.xml /app/pom.xml
-
-RUN mvn -N install
-
-COPY search-service/pom.xml /app/search-service/pom.xml
-
-COPY search-service/src /app/search-service/src
-
-WORKDIR /app/search-service
-
-RUN mvn -q -e -DskipTests package
-
-CMD ["java", "-jar", "target/search-service-1.0-SNAPSHOT.jar"]
-
-
+COPY target/search-service-1.0-SNAPSHOT.jar app.jar
+EXPOSE 5703 5702 5701 7003
+ENTRYPOINT ["java", "-cp", "app.jar", "com.thebiggestdata.Main"]

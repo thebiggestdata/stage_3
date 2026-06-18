@@ -1,55 +1,77 @@
 package com.thebiggestdata.search;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
+import com.google.gson.Gson;
+import com.thebiggestdata.search.application.usecases.searchservice.ContentSearchEngine;
+import com.thebiggestdata.search.infrastructure.adapters.web.SearchController;
+import com.thebiggestdata.search.application.usecases.searchservice.FindBooks;
+import com.thebiggestdata.search.infrastructure.adapters.sorter.SortByFrequency;
+import com.thebiggestdata.search.infrastructure.adapters.sorter.SortById;
+import com.thebiggestdata.search.infrastructure.adapters.hazelcast.HazelcastIndexStore;
+import com.thebiggestdata.search.infrastructure.adapters.hazelcast.HazelcastMetadataStore;
+import com.thebiggestdata.search.infrastructure.config.HazelcastConfig;
+import com.thebiggestdata.search.infrastructure.ports.SortingStrategy;
 import com.hazelcast.core.HazelcastInstance;
-import com.thebiggestdata.search.application.usecase.SearchBookUseCase;
-import com.thebiggestdata.search.domain.service.SearchEngine;
-import com.thebiggestdata.search.infrastructure.adapter.HazelcastInvertedIndexReaderAdapter;
-import com.thebiggestdata.search.infrastructure.controller.SearchController;
 import io.javalin.Javalin;
+import io.javalin.json.JsonMapper;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class App {
-
     public static void main(String[] args) {
-        System.out.println("Starting Search Service...");
+        HazelcastConfig hzConfig = new HazelcastConfig();
 
-        HazelcastInstance hazelcast = createHazelcastClient();
+        HazelcastInstance hazelcastInstance = hzConfig.initHazelcast(System.getenv().getOrDefault("CLUSTER_NAME", "SearchEngine"));
 
-        HazelcastInvertedIndexReaderAdapter indexReader = new HazelcastInvertedIndexReaderAdapter(hazelcast, "inverted-index");
-        SearchEngine searchEngine = new SearchEngine();
-        SearchBookUseCase searchUseCase = new SearchBookUseCase(indexReader, searchEngine);
+        HazelcastIndexStore indexStore = new HazelcastIndexStore(hazelcastInstance);
+        HazelcastMetadataStore metadataStore = new HazelcastMetadataStore(hazelcastInstance);
 
-        SearchController controller = new SearchController(searchUseCase);
+        Map<String, SortingStrategy> strategies = new HashMap<>();
+        strategies.put("frequency", new SortByFrequency());
+        strategies.put("id", new SortById());
 
-        startWebServer(controller);
-    }
+        ExecutorService searchExecutor = Executors.newFixedThreadPool(
+                Runtime.getRuntime().availableProcessors() - 3
+        );
 
-    private static HazelcastInstance createHazelcastClient() {
-        String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "search-cluster");
-        String membersEnv = System.getenv().getOrDefault("HZ_MEMBERS", "hazelcast1,hazelcast2,hazelcast3");
+        ContentSearchEngine engine = new ContentSearchEngine(indexStore, searchExecutor);
 
-        System.out.println("Connecting to Hazelcast Cluster: " + clusterName);
+        String sortingEnv = System.getenv("SORTING_CRITERIA");
 
-        ClientConfig config = new ClientConfig();
-        config.setClusterName(clusterName);
+        if (sortingEnv == null) sortingEnv = "frequency";
 
-        config.getNetworkConfig()
-                .addAddress(membersEnv.split(","))
-                .setSmartRouting(true)
-                .setRedoOperation(true);
+        SortingStrategy selectedStrategy = strategies.getOrDefault(
+                sortingEnv.toLowerCase(),
+                new SortByFrequency()
+        );
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+        FindBooks search = new FindBooks(engine, metadataStore, selectedStrategy);
 
-        System.out.println("Search Service connected. Members: " + client.getCluster().getMembers());
-        return client;
-    }
+        SearchController controller = new SearchController(search);
 
-    private static void startWebServer(SearchController controller) {
-        Javalin app = Javalin.create();
-        controller.registerRoutes(app);
-        app.get("/health", ctx -> ctx.result("OK"));
-        app.start(8080);
-        System.out.println("🌐 Search Service HTTP API running on port 8080");
+        FindBooks searchService = new FindBooks(engine, metadataStore, selectedStrategy);
+
+        SearchController searchController = new SearchController(searchService);
+
+        Gson gson = new Gson();
+
+        Javalin app = Javalin.create(javalinConfig -> {
+            javalinConfig.jsonMapper(new JsonMapper() {
+                @Override
+                public String toJsonString(Object obj, Type type) {
+                    return gson.toJson(obj, type);
+                }
+
+                @Override
+                public <T> T fromJsonString(String json, Type targetType) {
+                    return gson.fromJson(json, targetType);
+                }
+            });
+        }).start(7003);
+
+        app.get("/search", searchController::search);
+        app.get("/health", searchController::health);
     }
 }

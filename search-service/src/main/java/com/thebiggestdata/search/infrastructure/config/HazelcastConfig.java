@@ -3,6 +3,7 @@ package com.thebiggestdata.search.infrastructure.config;
 import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.thebiggestdata.search.infrastructure.adapters.hazelcast.BookMetadataSerializer;
 
 public class HazelcastConfig {
 

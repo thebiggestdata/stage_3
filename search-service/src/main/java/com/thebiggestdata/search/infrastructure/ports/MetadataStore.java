@@ -1,6 +1,6 @@
 package com.thebiggestdata.search.infrastructure.ports;
 
-import com.thebiggestdata.search.BookMetadata;
+import com.thebiggestdata.search.model.BookMetadata;
 import java.util.Map;
 import java.util.Set;
 

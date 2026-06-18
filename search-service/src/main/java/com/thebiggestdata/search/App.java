@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Main {
+public class App {
     public static void main(String[] args) {
         HazelcastConfig hzConfig = new HazelcastConfig();
 

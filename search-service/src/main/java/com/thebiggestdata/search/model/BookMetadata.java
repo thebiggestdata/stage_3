@@ -13,3 +13,4 @@ public record BookMetadata(String title, String author, String language, Integer
 		return source != null && target != null &&
 				source.toLowerCase().contains(target.toLowerCase());
 	}
+}

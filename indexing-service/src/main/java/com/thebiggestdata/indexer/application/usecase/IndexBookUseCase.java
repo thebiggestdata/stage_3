@@ -1,18 +1,24 @@
 package com.thebiggestdata.indexer.application.usecase;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import com.thebiggestdata.indexer.domain.model.IngestionEvent;
 import com.thebiggestdata.indexer.domain.model.RawDocument;
 import com.thebiggestdata.indexer.domain.model.TokenStream;
 import com.thebiggestdata.indexer.domain.port.*;
 import com.thebiggestdata.indexer.domain.service.PostingBuilder;
 import com.thebiggestdata.indexer.domain.service.TokenizerPipeline;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 
 public class IndexBookUseCase {
+    private static final Logger logger = LoggerFactory.getLogger(IndexBookUseCase.class);
 
-    private final IngestedEventConsumerPort eventPort;
+    private final HazelcastInstance hazelcast;
+    private final IngestedEventConsumerPort eventConsumer;
     private final DatalakePathResolverPort pathResolver;
     private final DatalakeReadPort datalakeReader;
     private final TokenizerPipeline tokenizerPipeline;
@@ -20,14 +26,16 @@ public class IndexBookUseCase {
     private final InvertedIndexWriterPort indexWriter;
 
     public IndexBookUseCase(
-            IngestedEventConsumerPort eventPort,
+            HazelcastInstance hazelcast,
+            IngestedEventConsumerPort eventConsumer,
             DatalakePathResolverPort pathResolver,
             DatalakeReadPort datalakeReader,
             TokenizerPipeline tokenizerPipeline,
             PostingBuilder postingBuilder,
             InvertedIndexWriterPort indexWriter
     ) {
-        this.eventPort = eventPort;
+        this.hazelcast = hazelcast;
+        this.eventConsumer = eventConsumer;
         this.pathResolver = pathResolver;
         this.datalakeReader = datalakeReader;
         this.tokenizerPipeline = tokenizerPipeline;
@@ -36,20 +44,42 @@ public class IndexBookUseCase {
     }
 
     public void run() {
-        IngestionEvent event = eventPort.consumeBookId();
-
+        IngestionEvent event = eventConsumer.consumeBookId();
+        int bookId = event.bookId();
         try {
-            int bookId = event.bookId();
-            String bodyPath = pathResolver.resolveBodyPath(bookId);
-            RawDocument doc = datalakeReader.read(bookId, bodyPath);
-            TokenStream stream = tokenizerPipeline.process(doc);
-            Map<String, List<Integer>> postings = postingBuilder.build(stream);
+            IMap<Integer, Boolean> processedDocs = hazelcast.getMap("processed-documents");
+
+            if (processedDocs.containsKey(bookId)) {
+                logger.info("Document {} already processed, skipping", bookId);
+                event.acknowledge();
+                return;
+            }
+
+            logger.info("Processing document ID: {}", bookId);
+
+            String eventPath = event.path();
+            String filePath;
+
+            if (eventPath != null && !eventPath.isEmpty()) {
+                filePath = eventPath;
+                logger.debug("Using path from event: {}", filePath);
+            } else {
+                filePath = pathResolver.resolve(bookId);
+                logger.warn("Path not found in event, fallback to resolver: {}", filePath);
+            }
+
+            RawDocument rawDoc = datalakeReader.read(bookId, filePath);
+            TokenStream tokenStream = tokenizerPipeline.process(rawDoc);
+            Map<String, List<Integer>> postings = postingBuilder.build(tokenStream);
             indexWriter.write(postings);
 
+            processedDocs.put(bookId, true);
             event.acknowledge();
+
+            logger.info("Successfully indexed document ID: {} with {} unique tokens", bookId, postings.size());
         } catch (Exception e) {
+            logger.error("Failed to index document ID: {}", bookId, e);
             event.reject();
-            throw e;
         }
     }
 }

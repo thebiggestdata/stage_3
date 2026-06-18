@@ -17,11 +17,8 @@ public class SearchBookUseCase {
     }
 
     public SearchResult search(String query) {
-
         String normalized = query.toLowerCase();
-
         List<Integer> bookIds = indexReader.getBookIdsForToken(normalized);
-
         return new SearchResult(normalized, bookIds);
     }
 }

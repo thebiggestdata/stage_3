@@ -1,4 +1,4 @@
-package com.thebiggestdata.search.application.usecase.searchservice;
+package com.thebiggestdata.search.application.usecases.searchservice;
 
 import com.thebiggestdata.search.infrastructure.ports.IndexStore;
 

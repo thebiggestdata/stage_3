@@ -1,7 +1,6 @@
 package com.thebiggestdata.search.infrastructure.adapters.web;
 
 import io.javalin.http.Context;
-import com.thebiggestdata.search.model.SearchCriteria;
 
 public class SearchRequestMapper {
 

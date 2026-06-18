@@ -1,6 +1,5 @@
-package com.thebiggestdata.search.application.usecase.searchservice;
+package com.thebiggestdata.search.application.usecases.searchservice;
 
-import com.thebiggestdata.search.model.SearchCriteria;
 import com.thebiggestdata.search.model.BookMetadata;
 import com.thebiggestdata.search.model.SearchResult;
 import com.thebiggestdata.search.infrastructure.ports.BookSearch;

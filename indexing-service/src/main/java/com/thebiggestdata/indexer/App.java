@@ -16,37 +16,33 @@ import com.thebiggestdata.indexer.infrastructure.adapter.LocalDatalakePathResolv
 import jakarta.jms.ConnectionFactory;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class App {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
+        System.out.println("Starting Indexing Service (Client Mode)...");
 
-        System.out.println("Starting Indexer...");
-        ClientConfig config = new ClientConfig();
-        config.setClusterName("search-cluster");
+        String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "SearchEngine");
+        String membersEnv = System.getenv().getOrDefault("HZ_MEMBERS", "hazelcast1:5701,hazelcast2:5701,hazelcast3:5701");
+        String brokerUrl = System.getenv().getOrDefault("BROKER_URL", "tcp://activemq:61616");
+        String queueName = System.getenv().getOrDefault("QUEUE_NAME", "ingested.document");
 
-        config.getNetworkConfig().setSmartRouting(false);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
+        clientConfig.getNetworkConfig().addAddress(membersEnv.split(","));
 
-        config.getNetworkConfig().addAddress(
-                "hazelcast1",
-                "hazelcast2",
-                "hazelcast3"
-        );
+        clientConfig.getNetworkConfig().setSmartRouting(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
 
-        config.getConnectionStrategyConfig().getConnectionRetryConfig()
-                .setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+        System.out.println("Connecting to Hazelcast Cluster members: " + membersEnv);
+        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
 
-        System.out.println("Connecting to Hazelcast Cluster...");
-        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(config);
-        System.out.println("Connected.");
-
-
-        String brokerUrl = "tcp://activemq:61616";
-        String queueName = "document.ingested";
+        System.out.println("Connected! Cluster size: " + hazelcast.getCluster().getMembers().size());
 
         ConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
-
-        ActiveMQIngestedEventConsumerAdapter eventConsumer = new ActiveMQIngestedEventConsumerAdapter(factory, queueName);
+        ActiveMQIngestedEventConsumerAdapter eventConsumer =
+                new ActiveMQIngestedEventConsumerAdapter(factory, queueName);
 
         LocalDatalakePathResolver pathResolver = new LocalDatalakePathResolver();
         FileSystemDatalakeReaderAdapter datalakeReader = new FileSystemDatalakeReaderAdapter();
@@ -56,10 +52,11 @@ public class App {
         TokenizerPipeline tokenizerPipeline = new TokenizerPipeline(normalizer, tokenizer);
 
         PostingBuilder postingBuilder = new PostingBuilder();
-
-        HazelcastInvertedIndexWriterAdapter indexWriter = new HazelcastInvertedIndexWriterAdapter(hazelcast, "inverted-index");
+        HazelcastInvertedIndexWriterAdapter indexWriter =
+                new HazelcastInvertedIndexWriterAdapter(hazelcast, "inverted-index");
 
         IndexBookUseCase useCase = new IndexBookUseCase(
+                hazelcast,
                 eventConsumer,
                 pathResolver,
                 datalakeReader,
@@ -68,23 +65,24 @@ public class App {
                 indexWriter
         );
 
-        System.out.println("Indexer started. Waiting for ingestion events...");
-
         int workerCount = Runtime.getRuntime().availableProcessors();
-        ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(workerCount);
+        System.out.println("Starting " + workerCount + " indexing workers listening on '" + queueName + "'...");
+
+        ExecutorService executor = Executors.newFixedThreadPool(workerCount);
 
         for (int i = 0; i < workerCount; i++) {
             executor.submit(() -> {
                 while (true) {
                     try {
                         useCase.run();
-                        System.out.println("[Thread " + Thread.currentThread().getId() + "] Document indexed.");
                     } catch (Exception e) {
-                        System.err.println("Worker error: " + e.getMessage());
+                        if(!e.getMessage().contains("Interrupted")) {
+                            System.err.println("Worker error: " + e.getMessage());
+                        }
+                        try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
                     }
                 }
             });
         }
-        Thread.currentThread().join();
     }
 }

@@ -1,77 +1,114 @@
 services:
+  ingestion-service:
+    build:
+      context: ./ingestion-service
+    image: ingestion-service:latest
+    container_name: ingestion-service
+    ports:
+      - "5701:5701"
+    command: ['datalake']
+    environment:
+      HZ_PORT: "5701"
+      HZ_PUBLIC_ADDRESS: ${NODE_IP}:5701
+      HZ_MEMBERS: ${MASTER_IP}:5701
+      HAZELCAST_CLUSTER_NAME: SearchEngine
+      BROKER_URL: tcp://${MASTER_IP}:61616
+      REPLICATION_FACTOR: 2
+      INDEXING_BUFFER_FACTOR: 2
+    volumes:
+      - ./mnt/datalake:/app/datalake
+    networks:
+      - search_net
+    profiles:
+      - backend
+
+  indexing-service:
+    build:
+      context: ./indexing-service
+    image: indexing-service:latest
+    container_name: indexing-service
+    ports:
+      - "5702:5702"
+    command: ['datalake']
+    environment:
+      HZ_PORT: "5702"
+      HZ_PUBLIC_ADDRESS: ${NODE_IP}:5702
+      HZ_MEMBERS: ${MASTER_IP}:5701
+      HAZELCAST_CLUSTER_NAME: SearchEngine
+      BROKER_URL: tcp://${MASTER_IP}:61616
+    volumes:
+      - ./mnt/datalake:/app/datalake
+    networks:
+      - search_net
+    profiles:
+      - backend
+
+  search-service:
+    build:
+      context: ./search-service
+    image: search-service:latest
+    container_name: search-service
+    ports:
+      - "5703:5703"
+      - "7003:7003"
+    environment:
+      HZ_PORT: "5703"
+      SERVICE_PORT: "7003"
+      HZ_PUBLIC_ADDRESS: ${NODE_IP}:5703
+      HZ_MEMBERS: ${MASTER_IP}:5701
+      HAZELCAST_CLUSTER_NAME: SearchEngine
+      SORTING_CRITERIA: "frequency"
+    networks:
+      - search_net
+    profiles:
+      - backend
+
+  benchmark:
+    build:
+      context: ./benchmarking
+    image: benchmark:latest
+    container_name: benchmark
+    ports:
+      - "5704:5704"
+    command: ['datalake']
+    environment:
+      BENCHMARK_MODE: recoverytime
+      HZ_PORT: "5704"
+      HZ_PUBLIC_ADDRESS: ${NODE_IP}:5704
+      HZ_MEMBERS: ${MASTER_IP}:5701
+      HAZELCAST_CLUSTER_NAME: SearchEngine
+    networks:
+      - search_net
+    profiles:
+      - benchmark
 
   activemq:
     image: rmohr/activemq:latest
     container_name: activemq
+    restart: always
     ports:
-      - "61616:61616"   # JMS
-      - "8161:8161"     # Web console
-    networks:
-      - bigdata
-
-  hazelcast1:
-    image: hazelcast/hazelcast:5.5.0
-    container_name: hazelcast1
+      - "61616:61616"
+      - "8161:8161"
     environment:
-      - HZ_CLUSTERNAME=search-cluster
+      - ACTIVEMQ_ADMIN_LOGIN=admin
+      - ACTIVEMQ_ADMIN_PASSWORD=admin
+    networks:
+      - search_net
+    profiles:
+      - broker
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
     ports:
-      - "5701:5701"
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
-      - bigdata
-
-  hazelcast2:
-    image: hazelcast/hazelcast:5.5.0
-    container_name: hazelcast2
-    environment:
-      - HZ_CLUSTERNAME=search-cluster
-    networks:
-      - bigdata
-
-  hazelcast3:
-    image: hazelcast/hazelcast:5.5.0
-    container_name: hazelcast3
-    environment:
-      - HZ_CLUSTERNAME=search-cluster
-    networks:
-      - bigdata
-
-  ingestion-service:
-    container_name: ingestion-service
-    build:
-      context: .
-      dockerfile: ingestion-service/Dockerfile
-    depends_on:
-      - activemq
-    networks:
-      - bigdata
-
-  indexing-service:
-    container_name: indexing-service
-    build:
-      context: .
-      dockerfile: indexing-service/Dockerfile
-    depends_on:
-      - activemq
-      - hazelcast1
-      - hazelcast2
-      - hazelcast3
-    networks:
-      - bigdata
-
-  search-service:
-    container_name: search-service
-    build:
-      context: .
-      dockerfile: search-service/Dockerfile
-    ports:
-      - "8080:8080"
-    depends_on:
-      - hazelcast1
-      - hazelcast2
-      - hazelcast3
-    networks:
-      - bigdata
+      - search_net
+    profiles:
+      - loadbalancer
 
 networks:
-  bigdata:
+  search_net:
     driver: bridge

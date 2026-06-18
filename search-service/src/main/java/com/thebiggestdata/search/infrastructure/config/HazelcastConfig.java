@@ -1,6 +1,5 @@
 package com.thebiggestdata.search.infrastructure.config;
 
-import com.thebiggestdata.search.infrastructure.adapters.hazelcast.BookMetadataSerializer;
 import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;

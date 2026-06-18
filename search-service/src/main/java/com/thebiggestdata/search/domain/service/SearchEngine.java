@@ -1,6 +1,5 @@
 package com.thebiggestdata.search.service;
 
-import com.thebiggestdata.search.application.usecase.SearchBookUseCase;
 import com.thebiggestdata.search.domain.model.SearchResult;
 
 public class SearchEngine {

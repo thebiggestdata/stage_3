@@ -1,7 +1,6 @@
 package com.thebiggestdata.search.infrastructure.controller;
 
 import io.javalin.Javalin;
-import com.thebiggestdata.search.application.usecase.SearchBookUseCase;
 import com.thebiggestdata.search.domain.model.SearchResult;
 
 public class SearchController {

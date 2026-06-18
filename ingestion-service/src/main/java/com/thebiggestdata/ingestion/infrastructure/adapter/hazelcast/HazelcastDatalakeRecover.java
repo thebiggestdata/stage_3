@@ -30,7 +30,8 @@ public class HazelcastDatalakeRecover {
         IMap<Integer, Boolean> lockMap = hazelcast.getMap("book-locks");
 
         if (!Files.exists(datalakePath) || !Files.isDirectory(datalakePath)) {
-            throw new IOException("Datalake path doesn't exist: " + dataVolumePath);
+            System.out.println("Datalake path doesn't exist yet: " + dataVolumePath);
+            return;
         }
 
         Files.walk(datalakePath)
@@ -51,7 +52,9 @@ public class HazelcastDatalakeRecover {
                         } finally {
                             lockMap.unlock(bookId);
                         }
-                        notifier.provide(bookId);
+
+                        notifier.provide(bookId, bodyPath.toString());
+
                     } catch (IOException e) {
                         throw new RuntimeException("Error reading from disk: " + bodyPath, e);
                     }

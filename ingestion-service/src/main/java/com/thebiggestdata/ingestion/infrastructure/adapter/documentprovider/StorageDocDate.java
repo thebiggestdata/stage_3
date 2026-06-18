@@ -33,27 +33,34 @@ public class StorageDocDate implements StorageDocProvider {
         List<String> contentSeparated = contentSeparatorProvider.provide(content);
         String header = contentSeparated.get(0);
         String body = contentSeparated.get(1);
+
         Path path = pathProvider.provide();
         Path headerPath = path.resolve(String.format("%d_header.txt", bookId));
         Path bodyPath = path.resolve(String.format("%d_body.txt", bookId));
+
         Files.writeString(headerPath, header);
         Files.writeString(bodyPath, body);
+
         logger.info("Book {} saved to local partition: {}", bookId, path);
+
         IMap<Integer, Integer> replicaCount = hazelcastDuplicationProvider
                 .getHazelcastInstance()
                 .getMap("replication-count");
         replicaCount.put(bookId, 0);
         logger.debug("Initialized replica counter for book {}", bookId);
+
         int replicasConfirmed = hazelcastDuplicationProvider.duplicateAndWait(
                 bookId, header, body, REPLICATION_FACTOR
         );
+
         if (replicasConfirmed < REPLICATION_FACTOR) {
             logger.error("Replication failed for book {}: only {} of {} replicas confirmed",
                     bookId, replicasConfirmed, REPLICATION_FACTOR);
             throw new IOException("Insufficient replicas for book " + bookId);
         }
+
         logger.info("Book {} replicated successfully to {} nodes", bookId, replicasConfirmed);
-        return path;
+
+        return bodyPath.toAbsolutePath();
     }
 }
-

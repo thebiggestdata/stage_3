@@ -1,7 +1,7 @@
 package com.thebiggestdata.indexer;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.thebiggestdata.indexer.application.usecase.IndexBookUseCase;
 import com.thebiggestdata.indexer.domain.service.PostingBuilder;
@@ -16,23 +16,29 @@ import com.thebiggestdata.indexer.infrastructure.adapter.LocalDatalakePathResolv
 import jakarta.jms.ConnectionFactory;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class App {
 
-    public static void main(String[] args) throws InterruptedException {
-        System.out.println("Starting Indexer...");
+    public static void main(String[] args) {
+        System.out.println("Starting Indexing Service (Client Mode)...");
 
-        Config config = new Config();
-        config.setClusterName("search-cluster");
-        config.getMultiMapConfig("inverted-index")
-                .setBackupCount(2)
-                .setAsyncBackupCount(1);
+        String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "SearchEngine");
+        String membersEnv = System.getenv().getOrDefault("HZ_MEMBERS", "hazelcast1:5701,hazelcast2:5701,hazelcast3:5701");
+        String brokerUrl = System.getenv().getOrDefault("BROKER_URL", "tcp://activemq:61616");
+        String queueName = System.getenv().getOrDefault("QUEUE_NAME", "ingested.document");
 
-        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(config);
-        System.out.println("Hazelcast member started.");
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
+        clientConfig.getNetworkConfig().addAddress(membersEnv.split(","));
 
-        String brokerUrl = System.getenv().getOrDefault("BROKER_URL", "tcp://localhost:61616");
-        String queueName = "document.ingested";
+        clientConfig.getNetworkConfig().setSmartRouting(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+
+        System.out.println("Connecting to Hazelcast Cluster members: " + membersEnv);
+        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
+
+        System.out.println("Connected! Cluster size: " + hazelcast.getCluster().getMembers().size());
 
         ConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
         ActiveMQIngestedEventConsumerAdapter eventConsumer =
@@ -50,14 +56,19 @@ public class App {
                 new HazelcastInvertedIndexWriterAdapter(hazelcast, "inverted-index");
 
         IndexBookUseCase useCase = new IndexBookUseCase(
-                hazelcast, eventConsumer, pathResolver, datalakeReader,
-                tokenizerPipeline, postingBuilder, indexWriter
+                hazelcast,
+                eventConsumer,
+                pathResolver,
+                datalakeReader,
+                tokenizerPipeline,
+                postingBuilder,
+                indexWriter
         );
 
-        System.out.println("Indexer ready. Consuming from " + queueName);
-
         int workerCount = Runtime.getRuntime().availableProcessors();
-        ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(workerCount);
+        System.out.println("Starting " + workerCount + " indexing workers listening on '" + queueName + "'...");
+
+        ExecutorService executor = Executors.newFixedThreadPool(workerCount);
 
         for (int i = 0; i < workerCount; i++) {
             executor.submit(() -> {
@@ -65,12 +76,13 @@ public class App {
                     try {
                         useCase.run();
                     } catch (Exception e) {
-                        System.err.println("Worker error: " + e.getMessage());
+                        if(!e.getMessage().contains("Interrupted")) {
+                            System.err.println("Worker error: " + e.getMessage());
+                        }
+                        try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
                     }
                 }
             });
         }
-
-        Thread.currentThread().join();
     }
 }

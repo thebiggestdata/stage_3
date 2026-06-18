@@ -36,7 +36,7 @@ public class App {
 
     public static void main(String[] args) throws Exception {
         logger.info("=== Starting Ingestion Service ===");
-        String datalakePath = System.getenv().getOrDefault("DATALAKE_PATH", "datalake");
+        String datalakePath = System.getenv().getOrDefault("DATALAKE_PATH", "/app/datalake");
         String downloadLogPath = System.getenv().getOrDefault("DOWNLOAD_LOG_PATH", "downloads.log");
         String brokerUrl = System.getenv().getOrDefault("BROKER_URL", "tcp://localhost:61616");
         String clusterName = System.getenv().getOrDefault("HZ_CLUSTER_NAME", "SearchEngine");

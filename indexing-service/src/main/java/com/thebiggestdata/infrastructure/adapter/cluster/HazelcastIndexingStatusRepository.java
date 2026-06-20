@@ -1,0 +1,19 @@
+package com.thebiggestdata.infrastructure.adapter.cluster;
+
+import com.thebiggestdata.domain.gateway.IndexingStatusRepository;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.core.HazelcastInstance;
+
+public class HazelcastIndexingStatusRepository implements IndexingStatusRepository {
+
+    private final ISet<Integer> registry;
+
+    public HazelcastIndexingStatusRepository(HazelcastInstance hz) {
+        this.registry = hz.getSet("indexingRegistry");
+    }
+
+    @Override
+    public boolean markAsIndexed(int documentId) {
+        return registry.add(documentId);
+    }
+}

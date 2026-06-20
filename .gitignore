@@ -1,26 +1,29 @@
-# Compiled class file
-*.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
+# IDE
 /.idea/
 
-# Package Files #
+# Build output
+target/
+dependency-reduced-pom.xml
+*.class
+
+# Packaged artifacts
 *.jar
 *.war
-*.nar
 *.ear
+*.nar
 *.zip
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Logs
+*.log
+
+# JVM crash dumps (see http://www.java.com/en/download/help/error_hotspot.xml)
 hs_err_pid*
 replay_pid*
+
+# BlueJ
+*.ctxt
+
+# J2ME
+.mtj.tmp/

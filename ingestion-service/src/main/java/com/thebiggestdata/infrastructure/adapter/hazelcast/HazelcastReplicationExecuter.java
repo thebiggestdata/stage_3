@@ -3,19 +3,19 @@ package com.thebiggestdata.infrastructure.adapter.hazelcast;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.thebiggestdata.domain.gateway.ReplicationExecuter;
-import com.thebiggestdata.domain.entity.NodeInformation;
+import com.thebiggestdata.domain.gateway.ReplicationRunner;
+import com.thebiggestdata.domain.entity.NodeDetails;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class HazelcastReplicationExecuter implements ReplicationExecuter {
+public class HazelcastReplicationExecuter implements ReplicationRunner {
 
     private final HazelcastInstance hazelcast;
-    private final NodeInformation nodeInformation;
+    private final NodeDetails nodeInformation;
     private final int replicationFactor;
 
-    public HazelcastReplicationExecuter(HazelcastInstance hazelcast, NodeInformation nodeInformation,
+    public HazelcastReplicationExecuter(HazelcastInstance hazelcast, NodeDetails nodeInformation,
                                         int replicationFactor) {
         this.hazelcast = hazelcast;
         this.nodeInformation = nodeInformation;

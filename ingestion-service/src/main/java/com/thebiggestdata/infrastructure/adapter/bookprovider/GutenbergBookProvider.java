@@ -1,10 +1,10 @@
 package com.thebiggestdata.infrastructure.adapter.bookprovider;
 
-import com.thebiggestdata.domain.gateway.BookProvider;
+import com.thebiggestdata.domain.gateway.BookSource;
 
 import java.io.IOException;
 
-public class GutenbergBookProvider implements BookProvider {
+public class GutenbergBookProvider implements BookSource {
 
     private final GutenbergFetch fetcher;
     private final GutenbergConnection connector;

@@ -1,22 +1,22 @@
 package com.thebiggestdata.infrastructure.adapter.activemq;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.usecase.IngestionPauseController;
-import com.thebiggestdata.domain.gateway.IngestionControlConsumer;
-import com.thebiggestdata.domain.entity.IngestionControlEvent;
+import com.thebiggestdata.usecase.IngestionPauseHandler;
+import com.thebiggestdata.domain.gateway.IngestionSignalListener;
+import com.thebiggestdata.domain.entity.IngestionSignal;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class ActiveMQIngestionControlConsumer implements IngestionControlConsumer {
+public class ActiveMQIngestionControlConsumer implements IngestionSignalListener {
 
     private static final String TOPIC_NAME = "ingestion.control";
 
     private final String brokerUrl;
     private final Gson gson = new Gson();
     private final String consumerId;
-    private final IngestionPauseController pauseController;
+    private final IngestionPauseHandler pauseController;
 
-    public ActiveMQIngestionControlConsumer(String brokerUrl, String consumerId, IngestionPauseController pauseController) {
+    public ActiveMQIngestionControlConsumer(String brokerUrl, String consumerId, IngestionPauseHandler pauseController) {
         this.brokerUrl = brokerUrl;
         this.consumerId = consumerId;
         this.pauseController = pauseController;
@@ -41,7 +41,7 @@ public class ActiveMQIngestionControlConsumer implements IngestionControlConsume
             if (!(message instanceof TextMessage)) return;
 
             String json = ((TextMessage) message).getText();
-            IngestionControlEvent event = gson.fromJson(json, IngestionControlEvent.class);
+            IngestionSignal event = gson.fromJson(json, IngestionSignal.class);
 
 switch (event.type()) {
                 case INGESTION_PAUSE -> pauseController.pause();

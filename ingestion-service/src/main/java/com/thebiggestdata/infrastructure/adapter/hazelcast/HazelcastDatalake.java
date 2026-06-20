@@ -3,7 +3,7 @@ package com.thebiggestdata.infrastructure.adapter.hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.thebiggestdata.domain.gateway.Datalake;
-import com.thebiggestdata.domain.entity.BookContent;
+import com.thebiggestdata.domain.entity.BookText;
 
 public class HazelcastDatalake implements Datalake {
 
@@ -16,8 +16,8 @@ public class HazelcastDatalake implements Datalake {
     }
 
     @Override
-    public void save(int bookId, BookContent content) {
-        IMap<Integer, BookContent> map = hz.getMap("datalake");
+    public void save(int bookId, BookText content) {
+        IMap<Integer, BookText> map = hz.getMap("datalake");
         map.put(bookId, content);
     }
 

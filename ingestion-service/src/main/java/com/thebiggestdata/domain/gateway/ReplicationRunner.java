@@ -1,5 +1,5 @@
 package com.thebiggestdata.domain.gateway;
 
-public interface ReplicationExecuter {
+public interface ReplicationRunner {
     void replicate(int bookId);
 }

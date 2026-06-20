@@ -1,25 +1,25 @@
 package com.thebiggestdata.usecase;
 
 import com.thebiggestdata.domain.gateway.*;
-import com.thebiggestdata.domain.entity.BookContent;
+import com.thebiggestdata.domain.entity.BookText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.Map;
 
-public class IngestBook {
+public class IngestBookUseCase {
 
-    private static final Logger log = LoggerFactory.getLogger(IngestBook.class);
+    private static final Logger log = LoggerFactory.getLogger(IngestBookUseCase.class);
 
-    private final BookProvider bookProvider;
-    private final BookStorage bookStorage;
+    private final BookSource bookProvider;
+    private final BookArchive bookStorage;
     private final Datalake datalake;
-    private final BookDownloadStatusStore downloadLog;
-    private final BookIngestedNotifier notifier;
+    private final BookDownloadStatusRepository downloadLog;
+    private final BookIngestedPublisher notifier;
 
-    public IngestBook(BookProvider bookProvider, BookStorage bookStorage, Datalake datalake,
-                      BookDownloadStatusStore downloadLog, BookIngestedNotifier notifier) {
+    public IngestBookUseCase(BookSource bookProvider, BookArchive bookStorage, Datalake datalake,
+                             BookDownloadStatusRepository downloadLog, BookIngestedPublisher notifier) {
         this.bookProvider = bookProvider;
         this.bookStorage = bookStorage;
         this.datalake = datalake;
@@ -38,7 +38,7 @@ public class IngestBook {
             String[] rawContent = bookProvider.getBookContent(bookId);
             Path savedPath = bookStorage.saveBook(bookId, rawContent);
 
-            BookContent content = new BookContent(rawContent[0], rawContent[1]);
+            BookText content = new BookText(rawContent[0], rawContent[1]);
             datalake.save(bookId, content);
             datalake.replicate(bookId);
 

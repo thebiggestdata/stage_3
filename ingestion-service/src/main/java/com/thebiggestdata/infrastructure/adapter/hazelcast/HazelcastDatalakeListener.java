@@ -4,8 +4,8 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.thebiggestdata.infrastructure.adapter.filesystem.BookStorageDate;
-import com.thebiggestdata.domain.gateway.BookProvider;
-import com.thebiggestdata.domain.entity.NodeInformation;
+import com.thebiggestdata.domain.gateway.BookSource;
+import com.thebiggestdata.domain.entity.NodeDetails;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -14,15 +14,15 @@ import java.util.concurrent.Executors;
 
 public class HazelcastDatalakeListener {
 
-    private final NodeInformation nodeInformation;
+    private final NodeDetails nodeInformation;
     private final HazelcastInstance hazelcast;
-    private final BookProvider bookProvider;
+    private final BookSource bookProvider;
     private final BookStorageDate bookStorageDate;
     private final ExecutorService executorService;
     private volatile boolean active = true;
 
-    public HazelcastDatalakeListener(HazelcastInstance hazelcast, NodeInformation nodeInformation,
-                                     BookProvider bookProvider, BookStorageDate bookStorageDate) {
+    public HazelcastDatalakeListener(HazelcastInstance hazelcast, NodeDetails nodeInformation,
+                                     BookSource bookProvider, BookStorageDate bookStorageDate) {
         this.hazelcast = hazelcast;
         this.nodeInformation = nodeInformation;
         this.bookProvider = bookProvider;

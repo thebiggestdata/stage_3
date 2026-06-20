@@ -1,5 +1,5 @@
 package com.thebiggestdata.domain.gateway;
 
-public interface BookIngestedNotifier {
+public interface BookIngestedPublisher {
     void notifyIngestedBook(int bookId);
 }

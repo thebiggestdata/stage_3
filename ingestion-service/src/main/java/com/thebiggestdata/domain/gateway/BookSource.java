@@ -1,5 +1,5 @@
 package com.thebiggestdata.domain.gateway;
 
-public interface BookProvider {
+public interface BookSource {
     String[] getBookContent(int bookId);
 }

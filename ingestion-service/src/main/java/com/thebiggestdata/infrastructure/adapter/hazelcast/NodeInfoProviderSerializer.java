@@ -3,18 +3,18 @@ package com.thebiggestdata.infrastructure.adapter.hazelcast;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import com.thebiggestdata.domain.entity.NodeInformation;
+import com.thebiggestdata.domain.entity.NodeDetails;
 
-public class NodeInfoProviderSerializer implements CompactSerializer<NodeInformation> {
+public class NodeInfoProviderSerializer implements CompactSerializer<NodeDetails> {
 
     @Override
-    public NodeInformation read(CompactReader reader) {
+    public NodeDetails read(CompactReader reader) {
         String nodeId = reader.readString("nodeId");
-        return new NodeInformation(nodeId);
+        return new NodeDetails(nodeId);
     }
 
     @Override
-    public void write(CompactWriter writer, NodeInformation nodeInformation) {
+    public void write(CompactWriter writer, NodeDetails nodeInformation) {
         writer.writeString("nodeId", nodeInformation.nodeId());
     }
 
@@ -24,7 +24,7 @@ public class NodeInfoProviderSerializer implements CompactSerializer<NodeInforma
     }
 
     @Override
-    public Class<NodeInformation> getCompactClass() {
-        return NodeInformation.class;
+    public Class<NodeDetails> getCompactClass() {
+        return NodeDetails.class;
     }
 }

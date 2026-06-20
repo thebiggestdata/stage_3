@@ -1,17 +1,17 @@
 package com.thebiggestdata.infrastructure.adapter.web;
 
-import com.thebiggestdata.domain.gateway.BookDownloadStatusStore;
-import com.thebiggestdata.domain.gateway.BookStatusProvider;
+import com.thebiggestdata.domain.gateway.BookDownloadStatusRepository;
+import com.thebiggestdata.domain.gateway.BookStatusReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class BookStatusService implements BookStatusProvider {
+public class BookStatusService implements BookStatusReader {
     private static final Logger log = LoggerFactory.getLogger(BookStatusService.class);
-    private final BookDownloadStatusStore bookDownloadLog;
+    private final BookDownloadStatusRepository bookDownloadLog;
 
-    public BookStatusService(BookDownloadStatusStore bookDownloadLog) {
+    public BookStatusService(BookDownloadStatusRepository bookDownloadLog) {
         this.bookDownloadLog = bookDownloadLog;
     }
 

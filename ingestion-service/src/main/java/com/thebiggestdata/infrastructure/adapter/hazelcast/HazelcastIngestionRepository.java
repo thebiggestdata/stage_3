@@ -4,11 +4,11 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.thebiggestdata.domain.gateway.IngestionQueueRepository;
+import com.thebiggestdata.domain.gateway.IngestionQueueStore;
 
 import java.util.concurrent.TimeUnit;
 
-public class HazelcastIngestionRepository implements IngestionQueueRepository {
+public class HazelcastIngestionRepository implements IngestionQueueStore {
 
     private final HazelcastInstance hz;
 

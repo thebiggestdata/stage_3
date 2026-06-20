@@ -1,16 +1,16 @@
 package com.thebiggestdata.infrastructure.adapter.filesystem;
 
-import com.thebiggestdata.domain.gateway.BookStorage;
-import com.thebiggestdata.domain.gateway.PathGenerator;
+import com.thebiggestdata.domain.gateway.BookArchive;
+import com.thebiggestdata.domain.gateway.PathBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class BookStorageDate implements BookStorage {
-    private final PathGenerator pathGenerator;
+public class BookStorageDate implements BookArchive {
+    private final PathBuilder pathGenerator;
 
-    public BookStorageDate(PathGenerator pathGenerator) {
+    public BookStorageDate(PathBuilder pathGenerator) {
         this.pathGenerator = pathGenerator;
     }
 

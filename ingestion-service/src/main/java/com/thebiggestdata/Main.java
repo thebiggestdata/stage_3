@@ -1,11 +1,11 @@
 package com.thebiggestdata;
 
 import com.thebiggestdata.domain.gateway.*;
-import com.thebiggestdata.usecase.BookIngestionPeriodicExecutor;
+import com.thebiggestdata.usecase.BookIngestionScheduler;
 import com.thebiggestdata.infrastructure.adapter.filesystem.BookStorageDate;
 import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIngestionRepository;
 import com.thebiggestdata.infrastructure.adapter.web.BookProviderController;
-import com.thebiggestdata.usecase.IngestBook;
+import com.thebiggestdata.usecase.IngestBookUseCase;
 import com.thebiggestdata.infrastructure.adapter.activemq.ActiveMQBookIngestedNotifier;
 import com.thebiggestdata.infrastructure.adapter.activemq.ActiveMQIngestionControlConsumer;
 import com.thebiggestdata.infrastructure.adapter.bookprovider.*;
@@ -14,7 +14,7 @@ import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastManager;
 import com.thebiggestdata.infrastructure.adapter.scheduler.PeriodicScheduler;
 import com.thebiggestdata.infrastructure.adapter.web.BookStatusService;
 import com.thebiggestdata.infrastructure.adapter.web.ListBooksService;
-import com.thebiggestdata.usecase.IngestionPauseController;
+import com.thebiggestdata.usecase.IngestionPauseHandler;
 import com.thebiggestdata.infrastructure.adapter.filesystem.DateTimePathGenerator;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
@@ -33,10 +33,10 @@ public class Main {
         int replicationFactor = Integer.parseInt(System.getenv().getOrDefault("REPLICATION_FACTOR", "1"));
         int bufferFactor = Integer.parseInt(System.getenv().getOrDefault("INDEXING_BUFFER_FACTOR", "10"));
 
-        PathGenerator pathGenerator = new DateTimePathGenerator(datalakePath);
+        PathBuilder pathGenerator = new DateTimePathGenerator(datalakePath);
         BookStorageDate storageDate = new BookStorageDate(pathGenerator);
 
-        BookProvider gutenbergProvider = new GutenbergBookProvider(new GutenbergFetch(), new GutenbergConnection(),
+        BookSource gutenbergProvider = new GutenbergBookProvider(new GutenbergFetch(), new GutenbergConnection(),
                 new GutenbergBookContentSeparator());
 
         HazelcastManager hazelcastManager = new HazelcastManager(clusterName, replicationFactor, gutenbergProvider,
@@ -45,19 +45,19 @@ public class Main {
         Datalake datalake = new HazelcastDatalake(hazelcastManager.getHazelcastInstance(), hazelcastManager.getHazelcastReplicationExecuter());
 
         ActiveMQBookIngestedNotifier notifier = new ActiveMQBookIngestedNotifier(brokerUrl);
-        BookDownloadStatusStore statusStore = new BookDownloadLog(hazelcastManager.getHazelcastInstance(), "log");
+        BookDownloadStatusRepository statusStore = new BookDownloadLog(hazelcastManager.getHazelcastInstance(), "log");
 
-        IngestionPauseController pauseController = new IngestionPauseController();
+        IngestionPauseHandler pauseController = new IngestionPauseHandler();
 
-        IngestBook ingestBookUseCase = new IngestBook(gutenbergProvider, storageDate, datalake, statusStore, notifier);
+        IngestBookUseCase ingestBookUseCase = new IngestBookUseCase(gutenbergProvider, storageDate, datalake, statusStore, notifier);
 
-        IngestionQueueRepository queueRepository = new HazelcastIngestionRepository(hazelcastManager.getHazelcastInstance());
+        IngestionQueueStore queueRepository = new HazelcastIngestionRepository(hazelcastManager.getHazelcastInstance());
 
-        BookIngestionPeriodicExecutor periodicLogic = new BookIngestionPeriodicExecutor(ingestBookUseCase, pauseController,
+        BookIngestionScheduler periodicLogic = new BookIngestionScheduler(ingestBookUseCase, pauseController,
                 queueRepository, bufferFactor);
 
-        BookListProvider listBooksService = new ListBooksService(statusStore);
-        BookStatusProvider bookStatusService = new BookStatusService(statusStore);
+        BookCatalogProvider listBooksService = new ListBooksService(statusStore);
+        BookStatusReader bookStatusService = new BookStatusService(statusStore);
 
         BookProviderController controller = new BookProviderController(ingestBookUseCase, listBooksService,bookStatusService);
 

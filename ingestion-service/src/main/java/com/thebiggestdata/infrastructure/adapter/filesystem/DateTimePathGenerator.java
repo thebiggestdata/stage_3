@@ -1,6 +1,6 @@
 package com.thebiggestdata.infrastructure.adapter.filesystem;
 
-import com.thebiggestdata.domain.gateway.PathGenerator;
+import com.thebiggestdata.domain.gateway.PathBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-public class DateTimePathGenerator implements PathGenerator {
+public class DateTimePathGenerator implements PathBuilder {
     private final String datalakePath;
 
     public DateTimePathGenerator(String datalakePath) {

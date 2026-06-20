@@ -9,7 +9,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.thebiggestdata.infrastructure.adapter.hazelcast.BookContentSerializer;
 import com.thebiggestdata.infrastructure.adapter.hazelcast.NodeInfoProviderSerializer;
 
-public class HazelcastConfig {
+public class ClusterConfig {
 
     public static final String INDEX_MAP = "inverted-index";
     public static final String METADATA_MAP = "bookMetadata";

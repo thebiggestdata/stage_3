@@ -1,22 +1,22 @@
 package com.thebiggestdata.infrastructure.adapter.web;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.usecase.IngestBook;
-import com.thebiggestdata.domain.gateway.BookListProvider;
-import com.thebiggestdata.domain.gateway.BookStatusProvider;
+import com.thebiggestdata.usecase.IngestBookUseCase;
+import com.thebiggestdata.domain.gateway.BookCatalogProvider;
+import com.thebiggestdata.domain.gateway.BookStatusReader;
 import io.javalin.http.Context;
 
 import java.util.Map;
 
 public class BookProviderController {
-    private final IngestBook ingestBookUseCase;
+    private final IngestBookUseCase ingestBookUseCase;
 
-    private final BookListProvider listBooksService;
-    private final BookStatusProvider bookStatusService;
+    private final BookCatalogProvider listBooksService;
+    private final BookStatusReader bookStatusService;
     private static final Gson gson = new Gson();
 
 
-    public BookProviderController(IngestBook ingestBookUseCase, BookListProvider listBooksService, BookStatusProvider bookStatusService) {
+    public BookProviderController(IngestBookUseCase ingestBookUseCase, BookCatalogProvider listBooksService, BookStatusReader bookStatusService) {
         this.ingestBookUseCase = ingestBookUseCase;
         this.listBooksService = listBooksService;
         this.bookStatusService = bookStatusService;

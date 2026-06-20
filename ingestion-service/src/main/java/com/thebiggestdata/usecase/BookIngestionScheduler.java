@@ -1,26 +1,26 @@
 package com.thebiggestdata.usecase;
 
-import com.thebiggestdata.domain.gateway.IngestionQueueRepository;
+import com.thebiggestdata.domain.gateway.IngestionQueueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
 
-public class BookIngestionPeriodicExecutor {
+public class BookIngestionScheduler {
 
-    private static final Logger log = LoggerFactory.getLogger(BookIngestionPeriodicExecutor.class);
+    private static final Logger log = LoggerFactory.getLogger(BookIngestionScheduler.class);
     private static final long RECOVERY_LOG_INTERVAL_MS = 20_000;
 
-    private final IngestBook ingestBookUseCase;
-    private final IngestionPauseController pauseController;
-    private final IngestionQueueRepository queueRepository;
+    private final IngestBookUseCase ingestBookUseCase;
+    private final IngestionPauseHandler pauseController;
+    private final IngestionQueueStore queueRepository;
     private final int bufferFactor;
 
     private long lastRecoveryLogTime = 0;
 
-    public BookIngestionPeriodicExecutor(IngestBook ingestBookUseCase, IngestionPauseController pauseController,
-                                         IngestionQueueRepository queueRepository, int bufferFactor) {
+    public BookIngestionScheduler(IngestBookUseCase ingestBookUseCase, IngestionPauseHandler pauseController,
+                                  IngestionQueueStore queueRepository, int bufferFactor) {
         this.ingestBookUseCase = ingestBookUseCase;
         this.pauseController = pauseController;
         this.queueRepository = queueRepository;

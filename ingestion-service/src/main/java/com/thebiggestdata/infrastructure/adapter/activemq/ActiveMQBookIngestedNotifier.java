@@ -1,12 +1,12 @@
 package com.thebiggestdata.infrastructure.adapter.activemq;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.domain.gateway.BookIngestedNotifier;
-import com.thebiggestdata.domain.entity.DocumentIngestedEvent;
+import com.thebiggestdata.domain.gateway.BookIngestedPublisher;
+import com.thebiggestdata.domain.entity.DocumentReceivedEvent;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class ActiveMQBookIngestedNotifier implements BookIngestedNotifier {
+public class ActiveMQBookIngestedNotifier implements BookIngestedPublisher {
 
     private final ConnectionFactory factory;
 
@@ -23,7 +23,7 @@ public class ActiveMQBookIngestedNotifier implements BookIngestedNotifier {
             MessageProducer producer = session.createProducer(queue);
 
             Gson gson = new Gson();
-            DocumentIngestedEvent event = new DocumentIngestedEvent(bookId);
+            DocumentReceivedEvent event = new DocumentReceivedEvent(bookId);
             String json = gson.toJson(event);
 
             TextMessage message = session.createTextMessage(json);

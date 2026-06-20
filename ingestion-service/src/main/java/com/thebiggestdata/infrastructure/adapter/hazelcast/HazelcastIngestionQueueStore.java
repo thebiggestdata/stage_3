@@ -8,11 +8,11 @@ import com.thebiggestdata.domain.gateway.IngestionQueueStore;
 
 import java.util.concurrent.TimeUnit;
 
-public class HazelcastIngestionRepository implements IngestionQueueStore {
+public class HazelcastIngestionQueueStore implements IngestionQueueStore {
 
     private final HazelcastInstance hz;
 
-    public HazelcastIngestionRepository(HazelcastInstance hz) {
+    public HazelcastIngestionQueueStore(HazelcastInstance hz) {
         this.hz = hz;
     }
 

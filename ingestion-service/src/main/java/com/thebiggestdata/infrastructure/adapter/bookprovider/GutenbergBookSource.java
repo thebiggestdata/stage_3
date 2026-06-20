@@ -4,14 +4,14 @@ import com.thebiggestdata.domain.gateway.BookSource;
 
 import java.io.IOException;
 
-public class GutenbergBookProvider implements BookSource {
+public class GutenbergBookSource implements BookSource {
 
-    private final GutenbergFetch fetcher;
-    private final GutenbergConnection connector;
-    private final GutenbergBookContentSeparator separator;
+    private final GutenbergDownloader fetcher;
+    private final GutenbergClient connector;
+    private final GutenbergBookTextSplitter separator;
 
 
-    public GutenbergBookProvider(GutenbergFetch fetcher, GutenbergConnection connector, GutenbergBookContentSeparator separator) {
+    public GutenbergBookSource(GutenbergDownloader fetcher, GutenbergClient connector, GutenbergBookTextSplitter separator) {
         this.fetcher = fetcher;
         this.connector = connector;
         this.separator = separator;

@@ -7,10 +7,10 @@ import com.thebiggestdata.domain.gateway.BookDownloadStatusRepository;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BookDownloadLog implements BookDownloadStatusRepository {
+public class BookDownloadJournal implements BookDownloadStatusRepository {
     private final ISet<Integer> downloadedBooks;
 
-    public BookDownloadLog(HazelcastInstance hazelcastInstance, String setName) {
+    public BookDownloadJournal(HazelcastInstance hazelcastInstance, String setName) {
         this.downloadedBooks = hazelcastInstance.getSet(setName);
     }
 

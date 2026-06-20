@@ -9,14 +9,14 @@ import com.thebiggestdata.domain.entity.NodeDetails;
 import java.util.HashSet;
 import java.util.Set;
 
-public class HazelcastReplicationExecuter implements ReplicationRunner {
+public class HazelcastReplicationRunner implements ReplicationRunner {
 
     private final HazelcastInstance hazelcast;
     private final NodeDetails nodeInformation;
     private final int replicationFactor;
 
-    public HazelcastReplicationExecuter(HazelcastInstance hazelcast, NodeDetails nodeInformation,
-                                        int replicationFactor) {
+    public HazelcastReplicationRunner(HazelcastInstance hazelcast, NodeDetails nodeInformation,
+                                      int replicationFactor) {
         this.hazelcast = hazelcast;
         this.nodeInformation = nodeInformation;
         this.replicationFactor = replicationFactor;

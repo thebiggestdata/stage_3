@@ -3,7 +3,7 @@ package com.thebiggestdata.infrastructure.adapter.bookprovider;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 
-public class GutenbergConnection {
+public class GutenbergClient {
     private final String endPoint = "https://www.gutenberg.org/cache/epub/%d/pg%d.txt";
 
     public Connection createConnection(int bookId){

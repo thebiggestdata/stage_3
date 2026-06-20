@@ -7,7 +7,7 @@ import com.thebiggestdata.domain.entity.IngestionSignal;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class ActiveMQIngestionControlConsumer implements IngestionSignalListener {
+public class ActiveMQIngestionSignalListener implements IngestionSignalListener {
 
     private static final String TOPIC_NAME = "ingestion.control";
 
@@ -16,7 +16,7 @@ public class ActiveMQIngestionControlConsumer implements IngestionSignalListener
     private final String consumerId;
     private final IngestionPauseHandler pauseController;
 
-    public ActiveMQIngestionControlConsumer(String brokerUrl, String consumerId, IngestionPauseHandler pauseController) {
+    public ActiveMQIngestionSignalListener(String brokerUrl, String consumerId, IngestionPauseHandler pauseController) {
         this.brokerUrl = brokerUrl;
         this.consumerId = consumerId;
         this.pauseController = pauseController;

@@ -3,7 +3,7 @@ package com.thebiggestdata.infrastructure.adapter.hazelcast;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.thebiggestdata.infrastructure.adapter.filesystem.BookStorageDate;
+import com.thebiggestdata.infrastructure.adapter.filesystem.BookArchiveByDate;
 import com.thebiggestdata.domain.gateway.BookSource;
 import com.thebiggestdata.domain.entity.NodeDetails;
 
@@ -17,12 +17,12 @@ public class HazelcastDatalakeListener {
     private final NodeDetails nodeInformation;
     private final HazelcastInstance hazelcast;
     private final BookSource bookProvider;
-    private final BookStorageDate bookStorageDate;
+    private final BookArchiveByDate bookStorageDate;
     private final ExecutorService executorService;
     private volatile boolean active = true;
 
     public HazelcastDatalakeListener(HazelcastInstance hazelcast, NodeDetails nodeInformation,
-                                     BookSource bookProvider, BookStorageDate bookStorageDate) {
+                                     BookSource bookProvider, BookArchiveByDate bookStorageDate) {
         this.hazelcast = hazelcast;
         this.nodeInformation = nodeInformation;
         this.bookProvider = bookProvider;

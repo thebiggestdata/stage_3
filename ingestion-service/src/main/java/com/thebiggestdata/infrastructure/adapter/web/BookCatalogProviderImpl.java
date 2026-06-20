@@ -8,11 +8,11 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
-public class ListBooksService implements BookCatalogProvider {
-    private static final Logger log = LoggerFactory.getLogger(ListBooksService.class);
+public class BookCatalogProviderImpl implements BookCatalogProvider {
+    private static final Logger log = LoggerFactory.getLogger(BookCatalogProviderImpl.class);
     private final BookDownloadStatusRepository bookDownloadLog;
 
-    public ListBooksService(BookDownloadStatusRepository bookDownloadLog) {
+    public BookCatalogProviderImpl(BookDownloadStatusRepository bookDownloadLog) {
         this.bookDownloadLog = bookDownloadLog;
     }
 

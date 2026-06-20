@@ -7,11 +7,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class BookStatusService implements BookStatusReader {
-    private static final Logger log = LoggerFactory.getLogger(BookStatusService.class);
+public class BookStatusReaderImpl implements BookStatusReader {
+    private static final Logger log = LoggerFactory.getLogger(BookStatusReaderImpl.class);
     private final BookDownloadStatusRepository bookDownloadLog;
 
-    public BookStatusService(BookDownloadStatusRepository bookDownloadLog) {
+    public BookStatusReaderImpl(BookDownloadStatusRepository bookDownloadLog) {
         this.bookDownloadLog = bookDownloadLog;
     }
 

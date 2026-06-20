@@ -4,11 +4,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class PeriodicScheduler {
+public class IntervalScheduler {
 
     private final ScheduledExecutorService scheduler;
 
-    public PeriodicScheduler() {
+    public IntervalScheduler() {
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 

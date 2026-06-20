@@ -1,6 +1,6 @@
 package com.thebiggestdata.metrics;
 
-import com.thebiggestdata.infrastructure.adapter.bookprovider.BookDownloadLog;
+import com.thebiggestdata.infrastructure.adapter.bookprovider.BookDownloadJournal;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -28,7 +28,7 @@ public class IngestionVelocity {
 
         System.out.println("Attempting to connect to Hazelcast Cluster...");
         HazelcastInstance hz = HazelcastClient.newHazelcastClient(cc);
-        BookDownloadLog booklog = new BookDownloadLog(hz, "log");
+        BookDownloadJournal booklog = new BookDownloadJournal(hz, "log");
 
         List<Double> rates = new ArrayList<>();
 

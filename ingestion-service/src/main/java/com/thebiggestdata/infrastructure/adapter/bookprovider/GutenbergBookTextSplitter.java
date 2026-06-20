@@ -1,6 +1,6 @@
 package com.thebiggestdata.infrastructure.adapter.bookprovider;
 
-public class GutenbergBookContentSeparator {
+public class GutenbergBookTextSplitter {
     private final String bookStart = "*** START OF THE PROJECT GUTENBERG EBOOK";
     private final String bookEnd = "*** END OF THE PROJECT GUTENBERG EBOOK";
 

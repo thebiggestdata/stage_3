@@ -5,7 +5,7 @@ import org.jsoup.HttpStatusException;
 
 import java.io.IOException;
 
-public class GutenbergFetch {
+public class GutenbergDownloader {
     public String fetchBook(Connection connection) throws IOException {
         Connection.Response response = connection.execute();
         if (response.statusCode() != 200){

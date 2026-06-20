@@ -5,7 +5,7 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.thebiggestdata.domain.entity.NodeDetails;
 
-public class NodeInfoProviderSerializer implements CompactSerializer<NodeDetails> {
+public class NodeDetailsSerializer implements CompactSerializer<NodeDetails> {
 
     @Override
     public NodeDetails read(CompactReader reader) {

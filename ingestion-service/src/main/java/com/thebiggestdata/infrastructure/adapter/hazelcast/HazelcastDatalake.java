@@ -8,9 +8,9 @@ import com.thebiggestdata.domain.entity.BookText;
 public class HazelcastDatalake implements Datalake {
 
     private final HazelcastInstance hz;
-    private final HazelcastReplicationExecuter replicator;
+    private final HazelcastReplicationRunner replicator;
 
-    public HazelcastDatalake(HazelcastInstance hz, HazelcastReplicationExecuter replicator) {
+    public HazelcastDatalake(HazelcastInstance hz, HazelcastReplicationRunner replicator) {
         this.hz = hz;
         this.replicator = replicator;
     }

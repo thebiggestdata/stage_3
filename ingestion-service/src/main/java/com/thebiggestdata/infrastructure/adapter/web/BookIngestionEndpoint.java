@@ -8,7 +8,7 @@ import io.javalin.http.Context;
 
 import java.util.Map;
 
-public class BookProviderController {
+public class BookIngestionEndpoint {
     private final IngestBookUseCase ingestBookUseCase;
 
     private final BookCatalogProvider listBooksService;
@@ -16,7 +16,7 @@ public class BookProviderController {
     private static final Gson gson = new Gson();
 
 
-    public BookProviderController(IngestBookUseCase ingestBookUseCase, BookCatalogProvider listBooksService, BookStatusReader bookStatusService) {
+    public BookIngestionEndpoint(IngestBookUseCase ingestBookUseCase, BookCatalogProvider listBooksService, BookStatusReader bookStatusService) {
         this.ingestBookUseCase = ingestBookUseCase;
         this.listBooksService = listBooksService;
         this.bookStatusService = bookStatusService;

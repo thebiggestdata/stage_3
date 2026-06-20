@@ -2,20 +2,20 @@ package com.thebiggestdata.infrastructure.adapter.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.thebiggestdata.infrastructure.adapter.filesystem.BookStorageDate;
+import com.thebiggestdata.infrastructure.adapter.filesystem.BookArchiveByDate;
 import com.thebiggestdata.infrastructure.config.ClusterConfig;
 import com.thebiggestdata.domain.gateway.BookSource;
 import com.thebiggestdata.domain.entity.BookText;
 import com.thebiggestdata.domain.entity.NodeDetails;
 
-public class HazelcastManager {
+public class ClusterManager {
 
     HazelcastInstance hazelcastInstance;
     NodeDetails nodeInformation;
     HazelcastDatalakeListener hazelcastDatalakeListener;
-    HazelcastReplicationExecuter hazelcastReplicationExecuter;
+    HazelcastReplicationRunner hazelcastReplicationExecuter;
 
-    public HazelcastManager(String clusterName, int replicationFactor, BookSource bookProvider, BookStorageDate bookStorageDate) {
+    public ClusterManager(String clusterName, int replicationFactor, BookSource bookProvider, BookArchiveByDate bookStorageDate) {
         this.nodeInformation = new NodeDetails(System.getenv("HZ_PUBLIC_ADDRESS"));
         this.hazelcastInstance = new ClusterConfig().initHazelcast(clusterName);
 
@@ -24,7 +24,7 @@ public class HazelcastManager {
 
         this.hazelcastDatalakeListener.registerListener();
 
-        this.hazelcastReplicationExecuter = new HazelcastReplicationExecuter(this.hazelcastInstance,
+        this.hazelcastReplicationExecuter = new HazelcastReplicationRunner(this.hazelcastInstance,
                 this.nodeInformation, replicationFactor);
     }
 
@@ -39,7 +39,7 @@ public class HazelcastManager {
         return this.hazelcastInstance;
     }
 
-    public HazelcastReplicationExecuter getHazelcastReplicationExecuter() {
+    public HazelcastReplicationRunner getHazelcastReplicationExecuter() {
         return hazelcastReplicationExecuter;
     }
 }

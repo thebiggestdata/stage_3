@@ -6,11 +6,11 @@ import com.thebiggestdata.domain.entity.DocumentReceivedEvent;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class ActiveMQBookIngestedNotifier implements BookIngestedPublisher {
+public class ActiveMQBookIngestedPublisher implements BookIngestedPublisher {
 
     private final ConnectionFactory factory;
 
-    public ActiveMQBookIngestedNotifier(String brokerUrl) {
+    public ActiveMQBookIngestedPublisher(String brokerUrl) {
         this.factory = new ActiveMQConnectionFactory(brokerUrl);
     }
 

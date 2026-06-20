@@ -7,10 +7,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class BookStorageDate implements BookArchive {
+public class BookArchiveByDate implements BookArchive {
     private final PathBuilder pathGenerator;
 
-    public BookStorageDate(PathBuilder pathGenerator) {
+    public BookArchiveByDate(PathBuilder pathGenerator) {
         this.pathGenerator = pathGenerator;
     }
 

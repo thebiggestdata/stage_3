@@ -10,10 +10,10 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-public class DateTimePathGenerator implements PathBuilder {
+public class DateTimePathBuilder implements PathBuilder {
     private final String datalakePath;
 
-    public DateTimePathGenerator(String datalakePath) {
+    public DateTimePathBuilder(String datalakePath) {
         this.datalakePath = datalakePath;
     }
 

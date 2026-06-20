@@ -1,12 +1,13 @@
 package com.thebiggestdata.ingestion.infrastructure.adapters.web;
 
-import com.google.gson.Gson;
 import com.thebiggestdata.ingestion.application.usecases.ingestionservice.IngestBook;
 import com.thebiggestdata.ingestion.infrastructure.ports.BookListProvider;
 import com.thebiggestdata.ingestion.infrastructure.ports.BookStatusProvider;
-import io.javalin.http.Context;
+import com.thebiggestdata.ingestion.model.IngestionResult;
 
 import java.util.Map;
+import io.javalin.http.Context;
+import com.google.gson.Gson;
 
 public class BookProviderController {
     private final IngestBook ingestBookUseCase;
@@ -24,7 +25,7 @@ public class BookProviderController {
 
     public void ingestBook(Context ctx) {
         int bookId = Integer.parseInt(ctx.pathParam("book_id"));
-        Map<String, Object> result = ingestBookUseCase.execute(bookId);
+        IngestionResult result = ingestBookUseCase.execute(bookId);
         ctx.result(gson.toJson(result));
     }
 

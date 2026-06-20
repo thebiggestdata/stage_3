@@ -1,11 +1,12 @@
 package com.thebiggestdata.ingestion.application.usecases.ingestionservice;
 
 import com.thebiggestdata.ingestion.infrastructure.ports.IngestionQueueRepository;
+import com.thebiggestdata.ingestion.model.IngestionResult;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Map;
 
 public class BookIngestionPeriodicExecutor {
 
@@ -56,7 +57,7 @@ public class BookIngestionPeriodicExecutor {
     private void processBook(Integer bookId) {
         if (!queueRepository.isBookIndexed(bookId)) {
             log.info("Ingesting book: {}", bookId);
-            Map<String, Object> result = ingestBookUseCase.execute(bookId);
+            IngestionResult result = ingestBookUseCase.execute(bookId);
             log.info("Result: {}\n", result);
         } else {
             log.info("BookContent {} is already indexed. Skipping ingestion...", bookId);

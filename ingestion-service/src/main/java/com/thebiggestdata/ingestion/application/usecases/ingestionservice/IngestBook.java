@@ -2,11 +2,11 @@ package com.thebiggestdata.ingestion.application.usecases.ingestionservice;
 
 import com.thebiggestdata.ingestion.infrastructure.ports.*;
 import com.thebiggestdata.ingestion.model.BookContent;
+import com.thebiggestdata.ingestion.model.IngestionResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.Map;
 
 public class IngestBook {
 
@@ -27,12 +27,12 @@ public class IngestBook {
         this.notifier = notifier;
     }
 
-    public Map<String, Object> execute(int bookId) {
+    public IngestionResult execute(int bookId) {
         log.info("Start processing bookId={}", bookId);
         try {
             if (downloadLog.isDownloaded(bookId)) {
                 log.warn("BookContent {} already downloaded, skipping.", bookId);
-                return Map.of("status", "already_downloaded", "book_id", bookId);
+                return IngestionResult.present(bookId);
             }
 
             String[] rawContent = bookProvider.getBookContent(bookId);
@@ -45,11 +45,11 @@ public class IngestBook {
             downloadLog.registerBookDownload(bookId);
             notifier.notifyIngestedBook(bookId);
 
-            return Map.of("status", "downloaded", "path", savedPath.toString());
+            return IngestionResult.ingested(bookId, savedPath.toString());
 
         } catch (Exception e) {
             log.error("Error processing bookId {}: {}", bookId, e.getMessage());
-            return Map.of("status", "error", "message", e.getMessage());
+            return IngestionResult.failed(bookId, e.getMessage());
         }
     }
 }

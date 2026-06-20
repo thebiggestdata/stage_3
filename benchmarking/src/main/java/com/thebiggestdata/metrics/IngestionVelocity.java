@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class IngestionRate {
+public class IngestionVelocity {
     public static void main(String[] args) throws Exception {
         System.setProperty("hazelcast.logging.type", "none");
         ClientConfig cc = new ClientConfig();

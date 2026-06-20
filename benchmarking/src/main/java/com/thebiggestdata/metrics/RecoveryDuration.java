@@ -10,7 +10,7 @@ import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 
-public class RecoveryTime {
+public class RecoveryDuration {
 
     public static void main(String[] args) throws Exception {
         System.setProperty("hazelcast.logging.type", "none");

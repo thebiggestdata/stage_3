@@ -7,7 +7,7 @@ import com.hazelcast.cp.IAtomicLong;
 import java.util.ArrayList;
 import java.util.List;
 
-public class IndexingThroughput {
+public class IndexingSpeed {
     public static void main(String[] args) throws Exception {
         System.setProperty("hazelcast.logging.type", "none");
         ClientConfig cc = new ClientConfig();

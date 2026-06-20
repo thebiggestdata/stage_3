@@ -1,8 +1,8 @@
 package com.thebiggestdata;
 
-import com.thebiggestdata.metrics.IngestionRate;
-import com.thebiggestdata.metrics.RecoveryTime;
-import com.thebiggestdata.metrics.IndexingThroughput;
+import com.thebiggestdata.metrics.IngestionVelocity;
+import com.thebiggestdata.metrics.RecoveryDuration;
+import com.thebiggestdata.metrics.IndexingSpeed;
 
 public class Runner {
     public static void main(String[] args) throws Exception {
@@ -19,13 +19,13 @@ public class Runner {
 
         switch (mode.toLowerCase().trim()) {
             case "ingestionrate":
-                IngestionRate.main(args);
+                IngestionVelocity.main(args);
                 break;
             case "indexingthroughput":
-                IndexingThroughput.main(args);
+                IndexingSpeed.main(args);
                 break;
             case "recoverytime":
-                RecoveryTime.main(args);
+                RecoveryDuration.main(args);
                 break;
             default:
                 System.err.println("!!! Unknown mode: " + mode);

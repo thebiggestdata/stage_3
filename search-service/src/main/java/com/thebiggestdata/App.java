@@ -1,15 +1,15 @@
 package com.thebiggestdata;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.application.usecases.searchservice.ContentSearchEngine;
-import com.thebiggestdata.infrastructure.adapters.web.SearchController;
-import com.thebiggestdata.application.usecases.searchservice.FindBooks;
-import com.thebiggestdata.infrastructure.adapters.sorter.SortByFrequency;
-import com.thebiggestdata.infrastructure.adapters.sorter.SortById;
-import com.thebiggestdata.infrastructure.adapters.hazelcast.HazelcastIndexStore;
-import com.thebiggestdata.infrastructure.adapters.hazelcast.HazelcastMetadataStore;
+import com.thebiggestdata.usecase.ContentSearchEngine;
+import com.thebiggestdata.infrastructure.adapter.web.SearchController;
+import com.thebiggestdata.usecase.FindBooks;
+import com.thebiggestdata.infrastructure.adapter.sorter.SortByFrequency;
+import com.thebiggestdata.infrastructure.adapter.sorter.SortById;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexStore;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastMetadataStore;
 import com.thebiggestdata.infrastructure.config.HazelcastConfig;
-import com.thebiggestdata.infrastructure.ports.SortingStrategy;
+import com.thebiggestdata.domain.gateway.SortingStrategy;
 import com.hazelcast.core.HazelcastInstance;
 import io.javalin.Javalin;
 import io.javalin.json.JsonMapper;

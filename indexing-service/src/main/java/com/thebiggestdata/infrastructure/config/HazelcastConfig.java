@@ -1,7 +1,7 @@
 package com.thebiggestdata.infrastructure.config;
 
-import com.thebiggestdata.infrastructure.adapters.hazelcast.BookContentSerializer;
-import com.thebiggestdata.infrastructure.adapters.hazelcast.BookMetadataSerializer;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.BookContentSerializer;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.BookMetadataSerializer;
 import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;

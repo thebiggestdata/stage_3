@@ -3,7 +3,7 @@ package com.thebiggestdata.infrastructure.adapter.web;
 import com.thebiggestdata.domain.entity.SearchQuery;
 import io.javalin.http.Context;
 
-public class SearchRequestMapper {
+public class SearchQueryMapper {
 
 	public SearchQuery map(Context ctx) {
 		String query = ctx.queryParam("q");

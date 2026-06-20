@@ -11,14 +11,14 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class FindBooks implements BookSearchEngine {
-	private static final Logger log = Logger.getLogger(FindBooks.class.getName());
+public class FindBooksUseCase implements BookSearchEngine {
+	private static final Logger log = Logger.getLogger(FindBooksUseCase.class.getName());
 
-	private final ContentSearchEngine searchEngine;
+	private final SearchExecutor searchEngine;
 	private final MetadataRepository metadataStore;
 	private final RankingStrategy sortingStrategy;
 
-	public FindBooks(ContentSearchEngine searchEngine, MetadataRepository metadataStore, RankingStrategy sortingStrategy) {
+	public FindBooksUseCase(SearchExecutor searchEngine, MetadataRepository metadataStore, RankingStrategy sortingStrategy) {
 		this.searchEngine = searchEngine;
 		this.metadataStore = metadataStore;
 		this.sortingStrategy = sortingStrategy;

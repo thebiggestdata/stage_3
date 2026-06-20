@@ -8,10 +8,10 @@ import com.hazelcast.map.IMap;
 import java.util.Map;
 import java.util.Set;
 
-public class HazelcastMetadataStore implements MetadataRepository {
+public class HazelcastMetadataRepository implements MetadataRepository {
 	private final IMap<Integer, BookInfo> metadataMap;
 
-	public HazelcastMetadataStore(HazelcastInstance hazelcastInstance) {
+	public HazelcastMetadataRepository(HazelcastInstance hazelcastInstance) {
 		this.metadataMap = hazelcastInstance.getMap("bookMetadata");
 	}
 

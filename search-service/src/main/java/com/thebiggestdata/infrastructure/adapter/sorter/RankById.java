@@ -5,9 +5,9 @@ import com.thebiggestdata.domain.entity.SearchHit;
 
 import java.util.List;
 
-public class SortByFrequency implements RankingStrategy {
+public class RankById implements RankingStrategy {
 	@Override
 	public void sort(List<SearchHit> results){
-		results.sort((a, b) -> Integer.compare(b.frequency(), a.frequency()));
+		results.sort((a, b) -> Integer.compare(a.id(), b.id()));
 	}
 }

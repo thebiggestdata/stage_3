@@ -8,11 +8,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ContentSearchEngine {
+public class SearchExecutor {
 	private final IndexRepository indexStore;
 	private final ExecutorService executor;
 
-	public ContentSearchEngine(IndexRepository indexStore, ExecutorService executor) {
+	public SearchExecutor(IndexRepository indexStore, ExecutorService executor) {
 		this.indexStore = indexStore;
 		this.executor = executor;
 	}

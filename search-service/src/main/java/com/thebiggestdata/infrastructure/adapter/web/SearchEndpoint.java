@@ -10,17 +10,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class SearchController {
-	private static final Logger log = Logger.getLogger(SearchController.class.getName());
+public class SearchEndpoint {
+	private static final Logger log = Logger.getLogger(SearchEndpoint.class.getName());
 
 	private final BookSearchEngine bookSearch;
-	private final SearchRequestMapper mapper;
-	private final SearchResponsePresenter presenter;
+	private final SearchQueryMapper mapper;
+	private final SearchHitPresenter presenter;
 
-	public SearchController(BookSearchEngine bookSearch) {
+	public SearchEndpoint(BookSearchEngine bookSearch) {
 		this.bookSearch = bookSearch;
-		this.mapper = new SearchRequestMapper();
-		this.presenter = new SearchResponsePresenter();
+		this.mapper = new SearchQueryMapper();
+		this.presenter = new SearchHitPresenter();
 	}
 
 	public void search(Context ctx) {

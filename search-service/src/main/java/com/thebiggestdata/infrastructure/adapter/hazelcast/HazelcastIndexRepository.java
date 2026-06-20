@@ -10,11 +10,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class HazelcastIndexStore implements IndexRepository {
-	private static final Logger log = LoggerFactory.getLogger(HazelcastIndexStore.class);
+public class HazelcastIndexRepository implements IndexRepository {
+	private static final Logger log = LoggerFactory.getLogger(HazelcastIndexRepository.class);
 	private final IMap<String, Set<String>> invertedIndex;
 
-	public HazelcastIndexStore(HazelcastInstance hazelcastInstance) {
+	public HazelcastIndexRepository(HazelcastInstance hazelcastInstance) {
 		this.invertedIndex = hazelcastInstance.getMap("inverted-index");
 		log.info("Connected to Hazelcast inverted index");
 	}

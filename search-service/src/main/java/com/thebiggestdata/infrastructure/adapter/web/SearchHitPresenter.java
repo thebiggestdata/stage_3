@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SearchResponsePresenter {
+public class SearchHitPresenter {
 
 	public Map<String, Object> formatSuccess(SearchQuery criteria, List<SearchHit> results) {
 		Map<String, Object> response = new LinkedHashMap<>();

@@ -1,14 +1,14 @@
 package com.thebiggestdata;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.usecase.ContentSearchEngine;
-import com.thebiggestdata.infrastructure.adapter.web.SearchController;
-import com.thebiggestdata.usecase.FindBooks;
-import com.thebiggestdata.infrastructure.adapter.sorter.SortByFrequency;
-import com.thebiggestdata.infrastructure.adapter.sorter.SortById;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexStore;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastMetadataStore;
-import com.thebiggestdata.infrastructure.config.HazelcastConfig;
+import com.thebiggestdata.usecase.SearchExecutor;
+import com.thebiggestdata.infrastructure.adapter.web.SearchEndpoint;
+import com.thebiggestdata.usecase.FindBooksUseCase;
+import com.thebiggestdata.infrastructure.adapter.sorter.RankByFrequency;
+import com.thebiggestdata.infrastructure.adapter.sorter.RankById;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexRepository;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastMetadataRepository;
+import com.thebiggestdata.infrastructure.config.ClusterConfig;
 import com.thebiggestdata.domain.gateway.RankingStrategy;
 import com.hazelcast.core.HazelcastInstance;
 import io.javalin.Javalin;
@@ -21,22 +21,22 @@ import java.util.concurrent.Executors;
 
 public class App {
     public static void main(String[] args) {
-        HazelcastConfig hzConfig = new HazelcastConfig();
+        ClusterConfig hzConfig = new ClusterConfig();
 
         HazelcastInstance hazelcastInstance = hzConfig.initHazelcast(System.getenv().getOrDefault("CLUSTER_NAME", "SearchEngine"));
 
-        HazelcastIndexStore indexStore = new HazelcastIndexStore(hazelcastInstance);
-        HazelcastMetadataStore metadataStore = new HazelcastMetadataStore(hazelcastInstance);
+        HazelcastIndexRepository indexStore = new HazelcastIndexRepository(hazelcastInstance);
+        HazelcastMetadataRepository metadataStore = new HazelcastMetadataRepository(hazelcastInstance);
 
         Map<String, RankingStrategy> strategies = new HashMap<>();
-        strategies.put("frequency", new SortByFrequency());
-        strategies.put("id", new SortById());
+        strategies.put("frequency", new RankByFrequency());
+        strategies.put("id", new RankById());
 
         ExecutorService searchExecutor = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors() - 3
         );
 
-        ContentSearchEngine engine = new ContentSearchEngine(indexStore, searchExecutor);
+        SearchExecutor engine = new SearchExecutor(indexStore, searchExecutor);
 
         String sortingEnv = System.getenv("SORTING_CRITERIA");
 
@@ -44,16 +44,16 @@ public class App {
 
         RankingStrategy selectedStrategy = strategies.getOrDefault(
                 sortingEnv.toLowerCase(),
-                new SortByFrequency()
+                new RankByFrequency()
         );
 
-        FindBooks search = new FindBooks(engine, metadataStore, selectedStrategy);
+        FindBooksUseCase search = new FindBooksUseCase(engine, metadataStore, selectedStrategy);
 
-        SearchController controller = new SearchController(search);
+        SearchEndpoint controller = new SearchEndpoint(search);
 
-        FindBooks searchService = new FindBooks(engine, metadataStore, selectedStrategy);
+        FindBooksUseCase searchService = new FindBooksUseCase(engine, metadataStore, selectedStrategy);
 
-        SearchController searchController = new SearchController(searchService);
+        SearchEndpoint searchController = new SearchEndpoint(searchService);
 
         Gson gson = new Gson();
 

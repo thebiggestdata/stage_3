@@ -4,13 +4,13 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class TextTokenizer implements com.thebiggestdata.domain.gateway.TextTokenizer {
+public class WhitespaceTokenizer implements com.thebiggestdata.domain.gateway.TextTokenizer {
     private static final Pattern CLEANUP_PATTERN = Pattern.compile("[^a-z0-9\\s]");
     private static final Pattern SPLIT_PATTERN = Pattern.compile("\\s+");
 
     private final Set<String> stopwords;
 
-    public TextTokenizer(Set<String> stopwords) {
+    public WhitespaceTokenizer(Set<String> stopwords) {
         this.stopwords = stopwords;
     }
 

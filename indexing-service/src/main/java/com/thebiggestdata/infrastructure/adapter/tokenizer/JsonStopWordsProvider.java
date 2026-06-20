@@ -11,9 +11,9 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.*;
 
-public class JsonStopWordsLoader implements StopWordsProvider {
+public class JsonStopWordsProvider implements StopWordsProvider {
 
-    private static final Logger log = LoggerFactory.getLogger(JsonStopWordsLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(JsonStopWordsProvider.class);
     private static final String FILE_NAME = "stopwords-iso.json";
 
     @Override

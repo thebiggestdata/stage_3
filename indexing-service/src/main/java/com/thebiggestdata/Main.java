@@ -1,8 +1,8 @@
 package com.thebiggestdata;
 
-import com.thebiggestdata.infrastructure.adapter.web.IndexingController;
+import com.thebiggestdata.infrastructure.adapter.web.IndexingEndpoint;
 import com.thebiggestdata.infrastructure.adapter.recovery.CoordinateReindex;
-import com.thebiggestdata.infrastructure.adapter.tokenizer.JsonStopWordsLoader;
+import com.thebiggestdata.infrastructure.adapter.tokenizer.JsonStopWordsProvider;
 import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastBookRepository;
 import com.thebiggestdata.infrastructure.adapter.activemq.ActiveMQEventListener;
 import com.thebiggestdata.infrastructure.adapter.activemq.ReindexMessageListener;
@@ -12,7 +12,7 @@ import com.thebiggestdata.infrastructure.adapter.hazelcast.MetadataReader;
 import com.thebiggestdata.infrastructure.adapter.recovery.IngestionQueueCoordinator;
 import com.thebiggestdata.infrastructure.adapter.recovery.InvertedIndexRestorer;
 import com.thebiggestdata.infrastructure.adapter.recovery.ReindexingRunnerImpl;
-import com.thebiggestdata.infrastructure.adapter.tokenizer.TextTokenizer;
+import com.thebiggestdata.infrastructure.adapter.tokenizer.WhitespaceTokenizer;
 import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexingStatusRepository;
 import com.thebiggestdata.usecase.IndexBookUseCase;
 import com.thebiggestdata.usecase.TermFrequencyCalculator;
@@ -41,8 +41,8 @@ public class Main {
         HazelcastMetadataRepository metadataStore = new HazelcastMetadataRepository(hz, new MetadataReader());
         HazelcastIndexingStatusRepository statusStore = new HazelcastIndexingStatusRepository(hz);
 
-        JsonStopWordsLoader stopWordsLoader = new JsonStopWordsLoader();
-        TextTokenizer tokenizer = new TextTokenizer(stopWordsLoader.load());
+        JsonStopWordsProvider stopWordsLoader = new JsonStopWordsProvider();
+        WhitespaceTokenizer tokenizer = new WhitespaceTokenizer(stopWordsLoader.load());
         TermFrequencyCalculator analyzer = new TermFrequencyCalculator(tokenizer);
 
         IndexBookUseCase indexBook = new IndexBookUseCase(bookStore, indexStore, metadataStore, statusStore, analyzer);
@@ -66,7 +66,7 @@ public class Main {
 
         CoordinateReindex rebuildUseCase = new CoordinateReindex(hz, brokerUrl);
 
-        IndexingController controller = new IndexingController(indexBook, rebuildUseCase);
+        IndexingEndpoint controller = new IndexingEndpoint(indexBook, rebuildUseCase);
         Javalin app = Javalin.create(c -> {
             c.http.defaultContentType = "application/json";
         }).start(7002);

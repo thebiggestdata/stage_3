@@ -9,14 +9,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
 
-public class IndexingController {
-    private static final Logger log = LoggerFactory.getLogger(IndexingController.class);
+public class IndexingEndpoint {
+    private static final Logger log = LoggerFactory.getLogger(IndexingEndpoint.class);
     private static final Gson gson = new Gson();
 
     private final IndexBookUseCase indexBook;
     private final CoordinateReindex rebuildUseCase;
 
-    public IndexingController(IndexBookUseCase indexBook, CoordinateReindex rebuildUseCase) {
+    public IndexingEndpoint(IndexBookUseCase indexBook, CoordinateReindex rebuildUseCase) {
         this.indexBook = indexBook;
         this.rebuildUseCase = rebuildUseCase;
     }

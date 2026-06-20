@@ -1,10 +1,10 @@
 package com.thebiggestdata.infrastructure.adapter.hazelcast;
 
-import com.thebiggestdata.domain.entity.BookMetadata;
+import com.thebiggestdata.domain.entity.BookInfo;
 
 public class MetadataParser {
 
-    public BookMetadata parseFromHeader(String header) {
+    public BookInfo parseFromHeader(String header) {
         String title = null;
         String author = null;
         String language = null;
@@ -30,9 +30,9 @@ public class MetadataParser {
             }
 
         if (year != null) {
-            return new BookMetadata(title, author, language, Integer.parseInt(year));
+            return new BookInfo(title, author, language, Integer.parseInt(year));
         }
 
-        return new BookMetadata(title, author, language, null);
+        return new BookInfo(title, author, language, null);
     }
 }

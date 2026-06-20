@@ -1,5 +1,5 @@
 package com.thebiggestdata.domain.gateway;
 
-public interface IndexingStatusStore {
+public interface IndexingStatusRepository {
     boolean markAsIndexed(int documentId);
 }

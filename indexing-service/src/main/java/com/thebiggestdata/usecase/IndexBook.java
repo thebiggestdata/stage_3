@@ -1,10 +1,10 @@
 package com.thebiggestdata.usecase;
 
-import com.thebiggestdata.domain.gateway.BookStore;
-import com.thebiggestdata.domain.gateway.IndexStore;
-import com.thebiggestdata.domain.gateway.IndexingStatusStore;
-import com.thebiggestdata.domain.gateway.MetadataStore;
-import com.thebiggestdata.domain.entity.BookContent;
+import com.thebiggestdata.domain.gateway.BookRepository;
+import com.thebiggestdata.domain.gateway.IndexRepository;
+import com.thebiggestdata.domain.gateway.IndexingStatusRepository;
+import com.thebiggestdata.domain.gateway.MetadataRepository;
+import com.thebiggestdata.domain.entity.BookText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
@@ -13,13 +13,13 @@ public class IndexBook {
 
     private static final Logger log = LoggerFactory.getLogger(IndexBook.class);
 
-    private final BookStore bookStore;
-    private final IndexStore indexStore;
-    private final MetadataStore metadataStore;
-    private final IndexingStatusStore statusStore;
+    private final BookRepository bookStore;
+    private final IndexRepository indexStore;
+    private final MetadataRepository metadataStore;
+    private final IndexingStatusRepository statusStore;
     private final TermFrequencyAnalyzer analyzer;
 
-    public IndexBook(BookStore bookStore, IndexStore indexStore, MetadataStore metadataStore, IndexingStatusStore statusStore, TermFrequencyAnalyzer analyzer) {
+    public IndexBook(BookRepository bookStore, IndexRepository indexStore, MetadataRepository metadataStore, IndexingStatusRepository statusStore, TermFrequencyAnalyzer analyzer) {
         this.bookStore = bookStore;
         this.indexStore = indexStore;
         this.metadataStore = metadataStore;
@@ -36,7 +36,7 @@ public class IndexBook {
         }
 
         try {
-            BookContent content = bookStore.getBookContent(documentId);
+            BookText content = bookStore.getBookContent(documentId);
 
             Map<String, Long> frequencies = analyzer.analyze(content.body());
             int totalTokens = analyzer.countTotalTokens(content.body());

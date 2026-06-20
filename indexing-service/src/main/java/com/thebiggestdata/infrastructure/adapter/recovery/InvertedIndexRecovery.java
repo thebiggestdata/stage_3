@@ -2,9 +2,9 @@ package com.thebiggestdata.infrastructure.adapter.recovery;
 
 
 import com.thebiggestdata.usecase.IndexBook;
-import com.thebiggestdata.domain.gateway.BookStore;
+import com.thebiggestdata.domain.gateway.BookRepository;
 import com.thebiggestdata.domain.gateway.RecoveryExecuter;
-import com.thebiggestdata.domain.entity.BookContent;
+import com.thebiggestdata.domain.entity.BookText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,9 +20,9 @@ public class InvertedIndexRecovery implements RecoveryExecuter {
 
     private final String dataVolumePath;
     private final IndexBook indexBookUseCase;
-    private final BookStore bookStore;
+    private final BookRepository bookStore;
 
-    public InvertedIndexRecovery(String dataVolumePath, IndexBook indexBookUseCase, BookStore bookStore) {
+    public InvertedIndexRecovery(String dataVolumePath, IndexBook indexBookUseCase, BookRepository bookStore) {
         this.dataVolumePath = dataVolumePath;
         this.indexBookUseCase = indexBookUseCase;
         this.bookStore = bookStore;
@@ -44,7 +44,7 @@ public class InvertedIndexRecovery implements RecoveryExecuter {
                             String header = Files.readString(headerPath);
                             String body = Files.readString(bodyPath);
 
-                            bookStore.save(bookId, new BookContent(header, body));
+                            bookStore.save(bookId, new BookText(header, body));
 
                             indexBookUseCase.execute(bookId);
 

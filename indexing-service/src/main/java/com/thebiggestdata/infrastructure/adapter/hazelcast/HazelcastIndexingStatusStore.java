@@ -1,10 +1,10 @@
 package com.thebiggestdata.infrastructure.adapter.hazelcast;
 
-import com.thebiggestdata.domain.gateway.IndexingStatusStore;
+import com.thebiggestdata.domain.gateway.IndexingStatusRepository;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
 
-public class HazelcastIndexingStatusStore implements IndexingStatusStore {
+public class HazelcastIndexingStatusStore implements IndexingStatusRepository {
 
     private final ISet<Integer> registry;
 

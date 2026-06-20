@@ -2,8 +2,8 @@ package com.thebiggestdata.infrastructure.adapter.recovery;
 
 import com.google.gson.Gson;
 import com.thebiggestdata.infrastructure.adapter.activemq.ActiveMQIngestionControlPublisher;
-import com.thebiggestdata.domain.entity.RebuildCommand;
-import com.thebiggestdata.domain.entity.RebuildResult;
+import com.thebiggestdata.domain.entity.ReindexCommand;
+import com.thebiggestdata.domain.entity.ReindexOutcome;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.ICountDownLatch;
 import jakarta.jms.*;
@@ -24,7 +24,7 @@ public class CoordinateRebuild {
         this.brokerUrl = brokerUrl;
     }
 
-    public RebuildResult execute() {
+    public ReindexOutcome execute() {
         try {
             int indexerCount = (int) hz.getCluster().getMembers().stream()
                     .filter(m -> "indexer".equals(m.getAttribute("role")))
@@ -42,7 +42,7 @@ public class CoordinateRebuild {
             broadcastRebuildCommand();
             new Thread(() -> waitForCompletion(latch, controlPublisher, indexerCount)).start();
 
-            return new RebuildResult(true, "Rebuild triggered on " + indexerCount + " nodes.");
+            return new ReindexOutcome(true, "Rebuild triggered on " + indexerCount + " nodes.");
 
         } catch (Exception e) {
             log.error("Rebuild coordination failed", e);
@@ -59,7 +59,7 @@ public class CoordinateRebuild {
             Topic topic = session.createTopic("index.rebuild.command");
             MessageProducer producer = session.createProducer(topic);
 
-            RebuildCommand command = new RebuildCommand(System.currentTimeMillis());
+            ReindexCommand command = new ReindexCommand(System.currentTimeMillis());
             TextMessage message = session.createTextMessage(gson.toJson(command));
             producer.send(message);
         }

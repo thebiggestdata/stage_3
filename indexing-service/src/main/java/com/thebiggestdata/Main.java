@@ -17,7 +17,7 @@ import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexingStat
 import com.thebiggestdata.usecase.IndexBook;
 import com.thebiggestdata.usecase.TermFrequencyAnalyzer;
 import com.thebiggestdata.infrastructure.config.HazelcastConfig;
-import com.thebiggestdata.domain.gateway.MessageConsumer;
+import com.thebiggestdata.domain.gateway.EventListener;
 import com.hazelcast.core.HazelcastInstance;
 import io.javalin.Javalin;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -58,7 +58,7 @@ public class Main {
         RebuildMessageListener rebuildListener = new RebuildMessageListener(hz, reindexingExecutor, jmsFactory);
         rebuildListener.startListening();
 
-        MessageConsumer messageConsumer = new ActiveMQMessageConsumer(jmsFactory, "documents.ingested", rebuildListener);
+        EventListener messageConsumer = new ActiveMQMessageConsumer(jmsFactory, "documents.ingested", rebuildListener);
         messageConsumer.startConsuming(documentId -> {
             log.info("Processing document from broker: {}", documentId);
             indexBook.execute(Integer.parseInt(documentId));

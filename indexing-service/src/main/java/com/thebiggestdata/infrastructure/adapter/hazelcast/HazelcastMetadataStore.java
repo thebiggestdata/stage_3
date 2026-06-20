@@ -1,19 +1,19 @@
 package com.thebiggestdata.infrastructure.adapter.hazelcast;
 
-import com.thebiggestdata.domain.gateway.MetadataStore;
-import com.thebiggestdata.domain.entity.BookContent;
-import com.thebiggestdata.domain.entity.BookMetadata;
+import com.thebiggestdata.domain.gateway.MetadataRepository;
+import com.thebiggestdata.domain.entity.BookText;
+import com.thebiggestdata.domain.entity.BookInfo;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HazelcastMetadataStore implements MetadataStore {
+public class HazelcastMetadataStore implements MetadataRepository {
 
     private static final Logger log = LoggerFactory.getLogger(HazelcastMetadataStore.class);
     private final MetadataParser parser;
-    private final IMap<Integer, BookContent> datalake;
-    private final IMap<Integer, BookMetadata> metadataMap;
+    private final IMap<Integer, BookText> datalake;
+    private final IMap<Integer, BookInfo> metadataMap;
 
     public HazelcastMetadataStore(HazelcastInstance hazelcastInstance, MetadataParser parser) {
         this.parser = parser;
@@ -23,7 +23,7 @@ public class HazelcastMetadataStore implements MetadataStore {
 
     @Override
     public void saveMetadata(int bookId, String header) {
-        BookMetadata metadata = parser.parseFromHeader(header);
+        BookInfo metadata = parser.parseFromHeader(header);
         metadataMap.put(bookId, metadata);
         datalake.remove(bookId);
     }

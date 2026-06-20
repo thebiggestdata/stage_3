@@ -1,21 +1,21 @@
 package com.thebiggestdata.infrastructure.adapter.hazelcast;
 
-import com.thebiggestdata.domain.entity.BookContent;
+import com.thebiggestdata.domain.entity.BookText;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
-public class BookContentSerializer implements CompactSerializer<BookContent> {
+public class BookContentSerializer implements CompactSerializer<BookText> {
 
     @Override
-    public BookContent read(CompactReader reader) {
+    public BookText read(CompactReader reader) {
         String header = reader.readString("header");
         String body = reader.readString("body");
-        return new BookContent(header, body);
+        return new BookText(header, body);
     }
 
     @Override
-    public void write(CompactWriter writer, BookContent bookContent) {
+    public void write(CompactWriter writer, BookText bookContent) {
         writer.writeString("header", bookContent.header());
         writer.writeString("body", bookContent.body());
     }
@@ -26,7 +26,7 @@ public class BookContentSerializer implements CompactSerializer<BookContent> {
     }
 
     @Override
-    public Class<BookContent> getCompactClass() {
-        return BookContent.class;
+    public Class<BookText> getCompactClass() {
+        return BookText.class;
     }
 }

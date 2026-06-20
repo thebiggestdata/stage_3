@@ -1,7 +1,7 @@
 package com.thebiggestdata.infrastructure.adapter.activemq;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.domain.entity.RebuildCommand;
+import com.thebiggestdata.domain.entity.ReindexCommand;
 import com.thebiggestdata.infrastructure.adapter.recovery.ReindexingExecutor;
 import com.hazelcast.core.HazelcastInstance;
 import jakarta.jms.*;
@@ -59,7 +59,7 @@ public class RebuildMessageListener {
     private void onMessage(Message message) {
         try {
             if (message instanceof TextMessage text) {
-                RebuildCommand command = gson.fromJson(text.getText(), RebuildCommand.class);
+                ReindexCommand command = gson.fromJson(text.getText(), ReindexCommand.class);
                 String dateUtc = ISO_UTC.format(Instant.ofEpochMilli(command.epoch()));
                 log.info("Received rebuild command issued at: {} UTC", dateUtc);
                 handleExecution();

@@ -1,4 +1,4 @@
 package com.thebiggestdata.domain.entity;
 
-public record RebuildCommand(long epoch) {
+public record ReindexCommand(long epoch) {
 }

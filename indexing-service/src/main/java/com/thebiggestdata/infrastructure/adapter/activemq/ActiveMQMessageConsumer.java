@@ -2,13 +2,13 @@ package com.thebiggestdata.infrastructure.adapter.activemq;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.thebiggestdata.domain.gateway.MessageConsumer;
+import com.thebiggestdata.domain.gateway.EventListener;
 import jakarta.jms.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.function.Consumer;
 
-public class ActiveMQMessageConsumer implements MessageConsumer {
+public class ActiveMQMessageConsumer implements EventListener {
     private static final Logger log = LoggerFactory.getLogger(ActiveMQMessageConsumer.class);
     private final ConnectionFactory factory;
     private final String queueName;

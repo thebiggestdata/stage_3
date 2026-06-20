@@ -1,24 +1,24 @@
 package com.thebiggestdata.infrastructure.adapter.hazelcast;
 
-import com.thebiggestdata.domain.gateway.BookStore;
-import com.thebiggestdata.domain.entity.BookContent;
+import com.thebiggestdata.domain.gateway.BookRepository;
+import com.thebiggestdata.domain.entity.BookText;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HazelcastBookStore implements BookStore {
+public class HazelcastBookStore implements BookRepository {
     private static final Logger log = LoggerFactory.getLogger(HazelcastBookStore.class);
-    private final IMap<Integer, BookContent> datalake;
+    private final IMap<Integer, BookText> datalake;
 
     public HazelcastBookStore(HazelcastInstance hazelcastInstance) {
         this.datalake = hazelcastInstance.getMap("datalake");
     }
 
     @Override
-    public BookContent getBookContent(int bookId) {
+    public BookText getBookContent(int bookId) {
         try {
-            BookContent book = this.datalake.get(bookId);
+            BookText book = this.datalake.get(bookId);
 
             if (book == null) {
                 log.error("Book {} not found in Hazelcast datalake", bookId);
@@ -34,7 +34,7 @@ public class HazelcastBookStore implements BookStore {
     }
 
     @Override
-    public void save(int bookId, BookContent content) {
+    public void save(int bookId, BookText content) {
         this.datalake.put(bookId, content);
     }
 }

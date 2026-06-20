@@ -3,7 +3,7 @@ package com.thebiggestdata.infrastructure.adapter.web;
 import com.google.gson.Gson;
 import com.thebiggestdata.usecase.IndexBook;
 import com.thebiggestdata.infrastructure.adapter.recovery.CoordinateRebuild;
-import com.thebiggestdata.domain.entity.RebuildResult;
+import com.thebiggestdata.domain.entity.ReindexOutcome;
 import io.javalin.http.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +53,7 @@ public class IndexingController {
     public void rebuild(Context ctx) {
         log.info("WEB: Request received to rebuild index");
         try {
-            RebuildResult result = rebuildUseCase.execute();
+            ReindexOutcome result = rebuildUseCase.execute();
 
             ctx.status(200).result(gson.toJson(Map.of(
                     "status", "success",

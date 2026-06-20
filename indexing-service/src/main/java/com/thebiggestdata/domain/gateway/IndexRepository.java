@@ -3,7 +3,7 @@ package com.thebiggestdata.domain.gateway;
 import java.util.Collection;
 import java.util.Set;
 
-public interface IndexStore {
+public interface IndexRepository {
     void addEntry(String term, String documentId, Long frequency);
     void pushEntries();
     Set<String> getDocuments(String term);

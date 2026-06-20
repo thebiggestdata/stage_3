@@ -1,5 +1,5 @@
 package com.thebiggestdata.domain.gateway;
 
-public interface MetadataStore {
+public interface MetadataRepository {
     public void saveMetadata(int bookId, String header);
 }

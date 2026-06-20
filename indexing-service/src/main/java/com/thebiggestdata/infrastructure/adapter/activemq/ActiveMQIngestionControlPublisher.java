@@ -1,11 +1,11 @@
 package com.thebiggestdata.infrastructure.adapter.activemq;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.domain.gateway.IngestionControlPublisher;
-import com.thebiggestdata.domain.entity.IngestionControlEvent;
+import com.thebiggestdata.domain.gateway.IngestionSignalEmitter;
+import com.thebiggestdata.domain.entity.IngestionSignal;
 import jakarta.jms.*;
 
-public class ActiveMQIngestionControlPublisher implements IngestionControlPublisher {
+public class ActiveMQIngestionControlPublisher implements IngestionSignalEmitter {
 
     private final ConnectionFactory factory;
     private final Gson gson = new Gson();
@@ -16,14 +16,14 @@ public class ActiveMQIngestionControlPublisher implements IngestionControlPublis
     }
 
     public void publishPause() {
-        publish(IngestionControlEvent.Type.INGESTION_PAUSE);
+        publish(IngestionSignal.Type.INGESTION_PAUSE);
     }
 
     public void publishResume() {
-        publish(IngestionControlEvent.Type.INGESTION_RESUME);
+        publish(IngestionSignal.Type.INGESTION_RESUME);
     }
 
-    private void publish(IngestionControlEvent.Type type) {
+    private void publish(IngestionSignal.Type type) {
         try (Connection connection = factory.createConnection()) {
             connection.start();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -32,7 +32,7 @@ public class ActiveMQIngestionControlPublisher implements IngestionControlPublis
             MessageProducer producer = session.createProducer(topic);
             producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
-            IngestionControlEvent event = new IngestionControlEvent(type);
+            IngestionSignal event = new IngestionSignal(type);
 
             String json = gson.toJson(event);
             TextMessage message = session.createTextMessage(json);

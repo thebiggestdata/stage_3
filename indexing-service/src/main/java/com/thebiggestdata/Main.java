@@ -1,19 +1,19 @@
 package com.thebiggestdata;
 
-import com.thebiggestdata.infrastructure.adapter.web.IndexingEndpoint;
+import com.thebiggestdata.infrastructure.adapter.search.IndexingEndpoint;
 import com.thebiggestdata.infrastructure.adapter.recovery.CoordinateReindex;
-import com.thebiggestdata.infrastructure.adapter.tokenizer.JsonStopWordsProvider;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastBookRepository;
+import com.thebiggestdata.infrastructure.adapter.processor.JsonStopWordsProvider;
+import com.thebiggestdata.infrastructure.adapter.cluster.HazelcastBookRepository;
 import com.thebiggestdata.infrastructure.adapter.activemq.ActiveMQEventListener;
 import com.thebiggestdata.infrastructure.adapter.activemq.ReindexMessageListener;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexRepository;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastMetadataRepository;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.MetadataReader;
+import com.thebiggestdata.infrastructure.adapter.cluster.HazelcastIndexRepository;
+import com.thebiggestdata.infrastructure.adapter.cluster.HazelcastMetadataRepository;
+import com.thebiggestdata.infrastructure.adapter.cluster.MetadataReader;
 import com.thebiggestdata.infrastructure.adapter.recovery.IngestionQueueCoordinator;
 import com.thebiggestdata.infrastructure.adapter.recovery.InvertedIndexRestorer;
 import com.thebiggestdata.infrastructure.adapter.recovery.ReindexingRunnerImpl;
-import com.thebiggestdata.infrastructure.adapter.tokenizer.WhitespaceTokenizer;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexingStatusRepository;
+import com.thebiggestdata.infrastructure.adapter.processor.WhitespaceTokenizer;
+import com.thebiggestdata.infrastructure.adapter.cluster.HazelcastIndexingStatusRepository;
 import com.thebiggestdata.usecase.IndexBookUseCase;
 import com.thebiggestdata.usecase.TermFrequencyCalculator;
 import com.thebiggestdata.infrastructure.config.ClusterConfig;

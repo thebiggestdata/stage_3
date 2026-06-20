@@ -2,12 +2,12 @@ package com.thebiggestdata;
 
 import com.google.gson.Gson;
 import com.thebiggestdata.usecase.SearchExecutor;
-import com.thebiggestdata.infrastructure.adapter.web.SearchEndpoint;
+import com.thebiggestdata.infrastructure.adapter.search.SearchEndpoint;
 import com.thebiggestdata.usecase.FindBooksUseCase;
-import com.thebiggestdata.infrastructure.adapter.sorter.RankByFrequency;
-import com.thebiggestdata.infrastructure.adapter.sorter.RankById;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexRepository;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastMetadataRepository;
+import com.thebiggestdata.infrastructure.adapter.ranker.RankByFrequency;
+import com.thebiggestdata.infrastructure.adapter.ranker.RankById;
+import com.thebiggestdata.infrastructure.adapter.cluster.HazelcastIndexRepository;
+import com.thebiggestdata.infrastructure.adapter.cluster.HazelcastMetadataRepository;
 import com.thebiggestdata.infrastructure.config.ClusterConfig;
 import com.thebiggestdata.domain.gateway.RankingStrategy;
 import com.hazelcast.core.HazelcastInstance;

@@ -6,8 +6,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.BookTextSerializer;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.NodeDetailsSerializer;
+import com.thebiggestdata.infrastructure.adapter.cluster.BookTextSerializer;
+import com.thebiggestdata.infrastructure.adapter.cluster.NodeDetailsSerializer;
 
 public class ClusterConfig {
 

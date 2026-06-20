@@ -1,7 +1,7 @@
 package com.thebiggestdata.ingestion.infrastructure.adapters.activemq;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.ingestion.infrastructure.ports.BookIngestedNotifier;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookIngestedNotifier;
 import com.thebiggestdata.ingestion.model.BookIngestedEvent;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;

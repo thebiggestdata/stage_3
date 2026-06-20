@@ -1,10 +1,15 @@
-package com.thebiggestdata.ingestion.application.usecases.ingestionservice;
+package com.thebiggestdata.ingestion.application.usecases;
 
-import com.thebiggestdata.ingestion.infrastructure.ports.*;
-import com.thebiggestdata.ingestion.model.BookContent;
-import com.thebiggestdata.ingestion.model.IngestionResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookProvider;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookStorage;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.Datalake;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookDownloadStatusStore;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookIngestedNotifier;
+import com.thebiggestdata.ingestion.model.BookContent;
+import com.thebiggestdata.ingestion.model.IngestionResult;
 
 import java.nio.file.Path;
 

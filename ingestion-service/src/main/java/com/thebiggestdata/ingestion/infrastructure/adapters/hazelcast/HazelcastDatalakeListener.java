@@ -4,7 +4,7 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.thebiggestdata.ingestion.infrastructure.adapters.filesystem.BookStorageDate;
-import com.thebiggestdata.ingestion.infrastructure.ports.BookProvider;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookProvider;
 import com.thebiggestdata.ingestion.model.Node;
 
 import java.util.HashSet;

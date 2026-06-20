@@ -1,6 +1,6 @@
-package com.thebiggestdata.ingestion.application.usecases.ingestionservice;
+package com.thebiggestdata.ingestion.application.usecases;
 
-import com.thebiggestdata.ingestion.infrastructure.ports.IngestionQueueRepository;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.IngestionQueueRepository;
 import com.thebiggestdata.ingestion.model.IngestionResult;
 
 import org.slf4j.Logger;

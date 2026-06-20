@@ -1,11 +1,11 @@
 package com.thebiggestdata.ingestion;
 
-import com.thebiggestdata.ingestion.application.usecases.ingestionservice.BookIngestionPeriodicExecutor;
+import com.thebiggestdata.ingestion.application.usecases.BookIngestionPeriodicExecutor;
 import com.thebiggestdata.ingestion.infrastructure.adapters.bookprovider.*;
 import com.thebiggestdata.ingestion.infrastructure.adapters.filesystem.BookStorageDate;
 import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastIngestionRepository;
 import com.thebiggestdata.ingestion.infrastructure.adapters.web.BookProviderController;
-import com.thebiggestdata.ingestion.application.usecases.ingestionservice.IngestBook;
+import com.thebiggestdata.ingestion.application.usecases.IngestBook;
 import com.thebiggestdata.ingestion.infrastructure.adapters.activemq.ActiveMQBookIngestedNotifier;
 import com.thebiggestdata.ingestion.infrastructure.adapters.activemq.ActiveMQIngestionControlConsumer;
 import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastDatalake;
@@ -13,9 +13,9 @@ import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastM
 import com.thebiggestdata.ingestion.infrastructure.adapters.scheduler.PeriodicScheduler;
 import com.thebiggestdata.ingestion.infrastructure.adapters.web.BookStatusService;
 import com.thebiggestdata.ingestion.infrastructure.adapters.web.ListBooksService;
-import com.thebiggestdata.ingestion.application.usecases.ingestionservice.IngestionPauseController;
+import com.thebiggestdata.ingestion.application.usecases.IngestionPauseController;
 import com.thebiggestdata.ingestion.infrastructure.adapters.filesystem.DateTimePathGenerator;
-import com.thebiggestdata.ingestion.infrastructure.ports.*;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.*;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

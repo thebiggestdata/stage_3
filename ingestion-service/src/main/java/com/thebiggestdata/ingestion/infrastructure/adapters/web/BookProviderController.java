@@ -1,13 +1,14 @@
 package com.thebiggestdata.ingestion.infrastructure.adapters.web;
 
-import com.thebiggestdata.ingestion.application.usecases.ingestionservice.IngestBook;
-import com.thebiggestdata.ingestion.infrastructure.ports.BookListProvider;
-import com.thebiggestdata.ingestion.infrastructure.ports.BookStatusProvider;
-import com.thebiggestdata.ingestion.model.IngestionResult;
-
 import java.util.Map;
 import io.javalin.http.Context;
+
 import com.google.gson.Gson;
+
+import com.thebiggestdata.ingestion.application.usecases.IngestBook;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookListProvider;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookStatusProvider;
+import com.thebiggestdata.ingestion.model.IngestionResult;
 
 public class BookProviderController {
     private final IngestBook ingestBookUseCase;

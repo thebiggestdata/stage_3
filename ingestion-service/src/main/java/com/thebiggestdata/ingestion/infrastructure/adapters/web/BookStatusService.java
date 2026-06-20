@@ -1,7 +1,7 @@
 package com.thebiggestdata.ingestion.infrastructure.adapters.web;
 
-import com.thebiggestdata.ingestion.infrastructure.ports.BookDownloadStatusStore;
-import com.thebiggestdata.ingestion.infrastructure.ports.BookStatusProvider;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookDownloadStatusStore;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.BookStatusProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

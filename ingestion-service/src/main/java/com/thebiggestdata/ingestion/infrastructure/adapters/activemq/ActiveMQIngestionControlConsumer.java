@@ -1,8 +1,8 @@
 package com.thebiggestdata.ingestion.infrastructure.adapters.activemq;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.ingestion.application.usecases.ingestionservice.IngestionPauseController;
-import com.thebiggestdata.ingestion.infrastructure.ports.IngestionControlConsumer;
+import com.thebiggestdata.ingestion.application.usecases.IngestionPauseController;
+import com.thebiggestdata.ingestion.infrastructure.ports.old.IngestionControlConsumer;
 import com.thebiggestdata.ingestion.model.IngestionStateEvent;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;

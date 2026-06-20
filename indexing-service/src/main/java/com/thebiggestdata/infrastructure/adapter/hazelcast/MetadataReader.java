@@ -2,7 +2,7 @@ package com.thebiggestdata.infrastructure.adapter.hazelcast;
 
 import com.thebiggestdata.domain.entity.BookInfo;
 
-public class MetadataParser {
+public class MetadataReader {
 
     public BookInfo parseFromHeader(String header) {
         String title = null;

@@ -8,14 +8,14 @@ import com.hazelcast.map.IMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HazelcastMetadataStore implements MetadataRepository {
+public class HazelcastMetadataRepository implements MetadataRepository {
 
-    private static final Logger log = LoggerFactory.getLogger(HazelcastMetadataStore.class);
-    private final MetadataParser parser;
+    private static final Logger log = LoggerFactory.getLogger(HazelcastMetadataRepository.class);
+    private final MetadataReader parser;
     private final IMap<Integer, BookText> datalake;
     private final IMap<Integer, BookInfo> metadataMap;
 
-    public HazelcastMetadataStore(HazelcastInstance hazelcastInstance, MetadataParser parser) {
+    public HazelcastMetadataRepository(HazelcastInstance hazelcastInstance, MetadataReader parser) {
         this.parser = parser;
         this.metadataMap = hazelcastInstance.getMap("bookMetadata");
         this.datalake = hazelcastInstance.getMap("datalake");

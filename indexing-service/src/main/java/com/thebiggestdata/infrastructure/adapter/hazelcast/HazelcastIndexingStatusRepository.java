@@ -4,11 +4,11 @@ import com.thebiggestdata.domain.gateway.IndexingStatusRepository;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
 
-public class HazelcastIndexingStatusStore implements IndexingStatusRepository {
+public class HazelcastIndexingStatusRepository implements IndexingStatusRepository {
 
     private final ISet<Integer> registry;
 
-    public HazelcastIndexingStatusStore(HazelcastInstance hz) {
+    public HazelcastIndexingStatusRepository(HazelcastInstance hz) {
         this.registry = hz.getSet("indexingRegistry");
     }
 

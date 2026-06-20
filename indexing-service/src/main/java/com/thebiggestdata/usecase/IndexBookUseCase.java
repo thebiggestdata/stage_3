@@ -9,17 +9,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
 
-public class IndexBook {
+public class IndexBookUseCase {
 
-    private static final Logger log = LoggerFactory.getLogger(IndexBook.class);
+    private static final Logger log = LoggerFactory.getLogger(IndexBookUseCase.class);
 
     private final BookRepository bookStore;
     private final IndexRepository indexStore;
     private final MetadataRepository metadataStore;
     private final IndexingStatusRepository statusStore;
-    private final TermFrequencyAnalyzer analyzer;
+    private final TermFrequencyCalculator analyzer;
 
-    public IndexBook(BookRepository bookStore, IndexRepository indexStore, MetadataRepository metadataStore, IndexingStatusRepository statusStore, TermFrequencyAnalyzer analyzer) {
+    public IndexBookUseCase(BookRepository bookStore, IndexRepository indexStore, MetadataRepository metadataStore, IndexingStatusRepository statusStore, TermFrequencyCalculator analyzer) {
         this.bookStore = bookStore;
         this.indexStore = indexStore;
         this.metadataStore = metadataStore;

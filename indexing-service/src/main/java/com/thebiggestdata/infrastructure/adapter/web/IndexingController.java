@@ -1,8 +1,8 @@
 package com.thebiggestdata.infrastructure.adapter.web;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.usecase.IndexBook;
-import com.thebiggestdata.infrastructure.adapter.recovery.CoordinateRebuild;
+import com.thebiggestdata.usecase.IndexBookUseCase;
+import com.thebiggestdata.infrastructure.adapter.recovery.CoordinateReindex;
 import com.thebiggestdata.domain.entity.ReindexOutcome;
 import io.javalin.http.Context;
 import org.slf4j.Logger;
@@ -13,10 +13,10 @@ public class IndexingController {
     private static final Logger log = LoggerFactory.getLogger(IndexingController.class);
     private static final Gson gson = new Gson();
 
-    private final IndexBook indexBook;
-    private final CoordinateRebuild rebuildUseCase;
+    private final IndexBookUseCase indexBook;
+    private final CoordinateReindex rebuildUseCase;
 
-    public IndexingController(IndexBook indexBook, CoordinateRebuild rebuildUseCase) {
+    public IndexingController(IndexBookUseCase indexBook, CoordinateReindex rebuildUseCase) {
         this.indexBook = indexBook;
         this.rebuildUseCase = rebuildUseCase;
     }

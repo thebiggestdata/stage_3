@@ -4,13 +4,13 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 
-public class IngestionQueueManager {
+public class IngestionQueueCoordinator {
 
     private final IQueue<Integer> queue;
     private final IAtomicLong queueInitialized;
     private Thread currentPopulatorThread;
 
-    public IngestionQueueManager(HazelcastInstance hz) {
+    public IngestionQueueCoordinator(HazelcastInstance hz) {
         this.queue = hz.getQueue("books");
         this.queueInitialized = hz.getCPSubsystem().getAtomicLong("queueInitialized");
     }

@@ -1,9 +1,9 @@
 package com.thebiggestdata.infrastructure.adapter.recovery;
 
 
-import com.thebiggestdata.usecase.IndexBook;
+import com.thebiggestdata.usecase.IndexBookUseCase;
 import com.thebiggestdata.domain.gateway.BookRepository;
-import com.thebiggestdata.domain.gateway.RecoveryExecuter;
+import com.thebiggestdata.domain.gateway.ReindexRunner;
 import com.thebiggestdata.domain.entity.BookText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,15 +14,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
-public class InvertedIndexRecovery implements RecoveryExecuter {
+public class InvertedIndexRestorer implements ReindexRunner {
 
-    private static final Logger log = LoggerFactory.getLogger(InvertedIndexRecovery.class);
+    private static final Logger log = LoggerFactory.getLogger(InvertedIndexRestorer.class);
 
     private final String dataVolumePath;
-    private final IndexBook indexBookUseCase;
+    private final IndexBookUseCase indexBookUseCase;
     private final BookRepository bookStore;
 
-    public InvertedIndexRecovery(String dataVolumePath, IndexBook indexBookUseCase, BookRepository bookStore) {
+    public InvertedIndexRestorer(String dataVolumePath, IndexBookUseCase indexBookUseCase, BookRepository bookStore) {
         this.dataVolumePath = dataVolumePath;
         this.indexBookUseCase = indexBookUseCase;
         this.bookStore = bookStore;

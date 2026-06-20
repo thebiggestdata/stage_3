@@ -1,22 +1,22 @@
 package com.thebiggestdata;
 
 import com.thebiggestdata.infrastructure.adapter.web.IndexingController;
-import com.thebiggestdata.infrastructure.adapter.recovery.CoordinateRebuild;
+import com.thebiggestdata.infrastructure.adapter.recovery.CoordinateReindex;
 import com.thebiggestdata.infrastructure.adapter.tokenizer.JsonStopWordsLoader;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastBookStore;
-import com.thebiggestdata.infrastructure.adapter.activemq.ActiveMQMessageConsumer;
-import com.thebiggestdata.infrastructure.adapter.activemq.RebuildMessageListener;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexStore;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastMetadataStore;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.MetadataParser;
-import com.thebiggestdata.infrastructure.adapter.recovery.IngestionQueueManager;
-import com.thebiggestdata.infrastructure.adapter.recovery.InvertedIndexRecovery;
-import com.thebiggestdata.infrastructure.adapter.recovery.ReindexingExecutor;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastBookRepository;
+import com.thebiggestdata.infrastructure.adapter.activemq.ActiveMQEventListener;
+import com.thebiggestdata.infrastructure.adapter.activemq.ReindexMessageListener;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexRepository;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastMetadataRepository;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.MetadataReader;
+import com.thebiggestdata.infrastructure.adapter.recovery.IngestionQueueCoordinator;
+import com.thebiggestdata.infrastructure.adapter.recovery.InvertedIndexRestorer;
+import com.thebiggestdata.infrastructure.adapter.recovery.ReindexingRunnerImpl;
 import com.thebiggestdata.infrastructure.adapter.tokenizer.TextTokenizer;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexingStatusStore;
-import com.thebiggestdata.usecase.IndexBook;
-import com.thebiggestdata.usecase.TermFrequencyAnalyzer;
-import com.thebiggestdata.infrastructure.config.HazelcastConfig;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexingStatusRepository;
+import com.thebiggestdata.usecase.IndexBookUseCase;
+import com.thebiggestdata.usecase.TermFrequencyCalculator;
+import com.thebiggestdata.infrastructure.config.ClusterConfig;
 import com.thebiggestdata.domain.gateway.EventListener;
 import com.hazelcast.core.HazelcastInstance;
 import io.javalin.Javalin;
@@ -33,38 +33,38 @@ public class Main {
         String brokerUrl = System.getenv().getOrDefault("BROKER_URL", "tcp://activemq:61616");
         String clusterName = System.getenv().getOrDefault("HAZELCAST_CLUSTER_NAME", "SearchEngine");
 
-        HazelcastConfig hazelcastConfig = new HazelcastConfig();
+        ClusterConfig hazelcastConfig = new ClusterConfig();
         HazelcastInstance hz = hazelcastConfig.initHazelcast(clusterName);
 
-        HazelcastIndexStore indexStore = new HazelcastIndexStore(hz);
-        HazelcastBookStore bookStore = new HazelcastBookStore(hz);
-        HazelcastMetadataStore metadataStore = new HazelcastMetadataStore(hz, new MetadataParser());
-        HazelcastIndexingStatusStore statusStore = new HazelcastIndexingStatusStore(hz);
+        HazelcastIndexRepository indexStore = new HazelcastIndexRepository(hz);
+        HazelcastBookRepository bookStore = new HazelcastBookRepository(hz);
+        HazelcastMetadataRepository metadataStore = new HazelcastMetadataRepository(hz, new MetadataReader());
+        HazelcastIndexingStatusRepository statusStore = new HazelcastIndexingStatusRepository(hz);
 
         JsonStopWordsLoader stopWordsLoader = new JsonStopWordsLoader();
         TextTokenizer tokenizer = new TextTokenizer(stopWordsLoader.load());
-        TermFrequencyAnalyzer analyzer = new TermFrequencyAnalyzer(tokenizer);
+        TermFrequencyCalculator analyzer = new TermFrequencyCalculator(tokenizer);
 
-        IndexBook indexBook = new IndexBook(bookStore, indexStore, metadataStore, statusStore, analyzer);
+        IndexBookUseCase indexBook = new IndexBookUseCase(bookStore, indexStore, metadataStore, statusStore, analyzer);
 
-        InvertedIndexRecovery recovery = new InvertedIndexRecovery(args[0], indexBook, bookStore);
-        IngestionQueueManager queueManager = new IngestionQueueManager(hz);
-        ReindexingExecutor reindexingExecutor = new ReindexingExecutor(recovery, hz, queueManager);
+        InvertedIndexRestorer recovery = new InvertedIndexRestorer(args[0], indexBook, bookStore);
+        IngestionQueueCoordinator queueManager = new IngestionQueueCoordinator(hz);
+        ReindexingRunnerImpl reindexingExecutor = new ReindexingRunnerImpl(recovery, hz, queueManager);
 
         reindexingExecutor.executeRecovery();
 
         ConnectionFactory jmsFactory = new ActiveMQConnectionFactory(brokerUrl);
 
-        RebuildMessageListener rebuildListener = new RebuildMessageListener(hz, reindexingExecutor, jmsFactory);
+        ReindexMessageListener rebuildListener = new ReindexMessageListener(hz, reindexingExecutor, jmsFactory);
         rebuildListener.startListening();
 
-        EventListener messageConsumer = new ActiveMQMessageConsumer(jmsFactory, "documents.ingested", rebuildListener);
+        EventListener messageConsumer = new ActiveMQEventListener(jmsFactory, "documents.ingested", rebuildListener);
         messageConsumer.startConsuming(documentId -> {
             log.info("Processing document from broker: {}", documentId);
             indexBook.execute(Integer.parseInt(documentId));
         });
 
-        CoordinateRebuild rebuildUseCase = new CoordinateRebuild(hz, brokerUrl);
+        CoordinateReindex rebuildUseCase = new CoordinateReindex(hz, brokerUrl);
 
         IndexingController controller = new IndexingController(indexBook, rebuildUseCase);
         Javalin app = Javalin.create(c -> {

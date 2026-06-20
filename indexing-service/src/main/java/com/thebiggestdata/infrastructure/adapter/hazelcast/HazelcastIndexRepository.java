@@ -8,14 +8,14 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class HazelcastIndexStore implements IndexRepository {
-    private static final Logger log = LoggerFactory.getLogger(HazelcastIndexStore.class);
+public class HazelcastIndexRepository implements IndexRepository {
+    private static final Logger log = LoggerFactory.getLogger(HazelcastIndexRepository.class);
     private final IMap<String, Set<String>> invertedIndex;
     private final Map<String, Set<String>> invertedIndexEntry;
     private final ISet<Integer> indexingRegistry;
     private final HazelcastInstance hz;
 
-    public HazelcastIndexStore(HazelcastInstance hazelcastInstance) {
+    public HazelcastIndexRepository(HazelcastInstance hazelcastInstance) {
         this.hz = hazelcastInstance;
         this.invertedIndex = hz.getMap("inverted-index");
         this.indexingRegistry = hz.getSet("indexingRegistry");

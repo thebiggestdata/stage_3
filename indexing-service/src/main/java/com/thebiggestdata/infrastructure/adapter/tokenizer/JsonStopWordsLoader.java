@@ -2,7 +2,7 @@ package com.thebiggestdata.infrastructure.adapter.tokenizer;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.thebiggestdata.domain.gateway.StopWordsLoader;
+import com.thebiggestdata.domain.gateway.StopWordsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +11,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.*;
 
-public class JsonStopWordsLoader implements StopWordsLoader {
+public class JsonStopWordsLoader implements StopWordsProvider {
 
     private static final Logger log = LoggerFactory.getLogger(JsonStopWordsLoader.class);
     private static final String FILE_NAME = "stopwords-iso.json";

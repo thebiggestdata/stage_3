@@ -21,7 +21,7 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <mainClass>com.thebiggestdata.Main</mainClass>
+                  <mainClass>com.thebiggestdata.ingestion.Main</mainClass>
                 </transformer>
               </transformers>
             </configuration>

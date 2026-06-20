@@ -51,7 +51,7 @@
                             <createDependencyReducedPom>true</createDependencyReducedPom>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>thebiggestdata.com.thebiggestdata.Main</mainClass>
+                                    <mainClass>thebiggestdata.com.thebiggestdata.ingestion.Main</mainClass>
                                 </transformer>
                             </transformers>
                             <filters>

@@ -22,7 +22,7 @@
               <createDependencyReducedPom>true</createDependencyReducedPom>
               <transformers>
                 <transformer>
-                  <mainClass>thebiggestdata.com.thebiggestdata.Main</mainClass>
+                  <mainClass>thebiggestdata.com.thebiggestdata.ingestion.Main</mainClass>
                 </transformer>
               </transformers>
               <filters>

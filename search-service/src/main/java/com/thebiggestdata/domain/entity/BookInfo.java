@@ -1,6 +1,6 @@
 package com.thebiggestdata.domain.entity;
 
-public record BookMetadata(String title, String author, String language, Integer year) {
+public record BookInfo(String title, String author, String language, Integer year) {
 
 	public boolean matches(String authorFilter, String languageFilter, Integer yearFilter) {
 		if (authorFilter != null && !containsIgnoreCase(this.author, authorFilter)) return false;

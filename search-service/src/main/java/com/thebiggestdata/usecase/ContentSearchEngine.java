@@ -1,6 +1,6 @@
 package com.thebiggestdata.usecase;
 
-import com.thebiggestdata.domain.gateway.IndexStore;
+import com.thebiggestdata.domain.gateway.IndexRepository;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -9,10 +9,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ContentSearchEngine {
-	private final IndexStore indexStore;
+	private final IndexRepository indexStore;
 	private final ExecutorService executor;
 
-	public ContentSearchEngine(IndexStore indexStore, ExecutorService executor) {
+	public ContentSearchEngine(IndexRepository indexStore, ExecutorService executor) {
 		this.indexStore = indexStore;
 		this.executor = executor;
 	}

@@ -1,6 +1,6 @@
 package com.thebiggestdata.infrastructure.adapter.hazelcast;
 
-import com.thebiggestdata.domain.gateway.IndexStore;
+import com.thebiggestdata.domain.gateway.IndexRepository;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.slf4j.Logger;
@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class HazelcastIndexStore implements IndexStore {
+public class HazelcastIndexStore implements IndexRepository {
 	private static final Logger log = LoggerFactory.getLogger(HazelcastIndexStore.class);
 	private final IMap<String, Set<String>> invertedIndex;
 

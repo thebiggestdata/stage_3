@@ -2,6 +2,6 @@ package com.thebiggestdata.domain.gateway;
 
 import java.util.Set;
 
-public interface IndexStore {
+public interface IndexRepository {
 	Set<String> getDocuments(String term);
 }

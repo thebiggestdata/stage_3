@@ -1,8 +1,8 @@
 package com.thebiggestdata.infrastructure.adapter.web;
 
-import com.thebiggestdata.domain.gateway.BookSearch;
-import com.thebiggestdata.domain.entity.SearchCriteria;
-import com.thebiggestdata.domain.entity.SearchResult;
+import com.thebiggestdata.domain.gateway.BookSearchEngine;
+import com.thebiggestdata.domain.entity.SearchQuery;
+import com.thebiggestdata.domain.entity.SearchHit;
 import io.javalin.http.Context;
 
 import java.util.LinkedHashMap;
@@ -13,11 +13,11 @@ import java.util.logging.Logger;
 public class SearchController {
 	private static final Logger log = Logger.getLogger(SearchController.class.getName());
 
-	private final BookSearch bookSearch;
+	private final BookSearchEngine bookSearch;
 	private final SearchRequestMapper mapper;
 	private final SearchResponsePresenter presenter;
 
-	public SearchController(BookSearch bookSearch) {
+	public SearchController(BookSearchEngine bookSearch) {
 		this.bookSearch = bookSearch;
 		this.mapper = new SearchRequestMapper();
 		this.presenter = new SearchResponsePresenter();
@@ -25,10 +25,10 @@ public class SearchController {
 
 	public void search(Context ctx) {
 		try {
-			SearchCriteria criteria = mapper.map(ctx);
+			SearchQuery criteria = mapper.map(ctx);
 			log.info("Executing search for: " + criteria.query());
 
-			List<SearchResult> results = bookSearch.execute(criteria);
+			List<SearchHit> results = bookSearch.execute(criteria);
 
 			Map<String, Object> jsonResponse = presenter.formatSuccess(criteria, results);
 

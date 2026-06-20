@@ -1,11 +1,11 @@
 package com.thebiggestdata.infrastructure.adapter.web;
 
-import com.thebiggestdata.domain.entity.SearchCriteria;
+import com.thebiggestdata.domain.entity.SearchQuery;
 import io.javalin.http.Context;
 
 public class SearchRequestMapper {
 
-	public SearchCriteria map(Context ctx) {
+	public SearchQuery map(Context ctx) {
 		String query = ctx.queryParam("q");
 
 		if (query == null || query.trim().isEmpty()) {
@@ -16,7 +16,7 @@ public class SearchRequestMapper {
 		String language = ctx.queryParam("language");
 		Integer year = parseYear(ctx.queryParam("year"));
 
-		return new SearchCriteria(query, author, language, year);
+		return new SearchQuery(query, author, language, year);
 	}
 
 	private Integer parseYear(String yearStr) {

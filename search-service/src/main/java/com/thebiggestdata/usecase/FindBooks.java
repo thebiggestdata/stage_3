@@ -1,31 +1,31 @@
 package com.thebiggestdata.usecase;
 
-import com.thebiggestdata.domain.entity.BookMetadata;
-import com.thebiggestdata.domain.entity.SearchCriteria;
-import com.thebiggestdata.domain.entity.SearchResult;
-import com.thebiggestdata.domain.gateway.BookSearch;
-import com.thebiggestdata.domain.gateway.MetadataStore;
-import com.thebiggestdata.domain.gateway.SortingStrategy;
+import com.thebiggestdata.domain.entity.BookInfo;
+import com.thebiggestdata.domain.entity.SearchQuery;
+import com.thebiggestdata.domain.entity.SearchHit;
+import com.thebiggestdata.domain.gateway.BookSearchEngine;
+import com.thebiggestdata.domain.gateway.MetadataRepository;
+import com.thebiggestdata.domain.gateway.RankingStrategy;
 
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class FindBooks implements BookSearch {
+public class FindBooks implements BookSearchEngine {
 	private static final Logger log = Logger.getLogger(FindBooks.class.getName());
 
 	private final ContentSearchEngine searchEngine;
-	private final MetadataStore metadataStore;
-	private final SortingStrategy sortingStrategy;
+	private final MetadataRepository metadataStore;
+	private final RankingStrategy sortingStrategy;
 
-	public FindBooks(ContentSearchEngine searchEngine, MetadataStore metadataStore, SortingStrategy sortingStrategy) {
+	public FindBooks(ContentSearchEngine searchEngine, MetadataRepository metadataStore, RankingStrategy sortingStrategy) {
 		this.searchEngine = searchEngine;
 		this.metadataStore = metadataStore;
 		this.sortingStrategy = sortingStrategy;
 	}
 
 	@Override
-	public List<SearchResult> execute(SearchCriteria criteria) {
+	public List<SearchHit> execute(SearchQuery criteria) {
 		String query = criteria.query();
 		String author = criteria.author();
 		String language = criteria.language();
@@ -39,9 +39,9 @@ public class FindBooks implements BookSearch {
 			return Collections.emptyList();
 		}
 
-		Map<Integer, BookMetadata> metadata = fetchMetadata(contentMatches.keySet());
+		Map<Integer, BookInfo> metadata = fetchMetadata(contentMatches.keySet());
 
-		List<SearchResult> results = buildAndFilterResults(contentMatches, metadata, author, language, year);
+		List<SearchHit> results = buildAndFilterResults(contentMatches, metadata, author, language, year);
 
 		sortingStrategy.sort(results);
 
@@ -51,20 +51,20 @@ public class FindBooks implements BookSearch {
 		return results;
 	}
 
-	private Map<Integer, BookMetadata> fetchMetadata(Set<String> docIdsStr) {
+	private Map<Integer, BookInfo> fetchMetadata(Set<String> docIdsStr) {
 		Set<Integer> docIds = docIdsStr.stream()
 				.map(Integer::parseInt)
 				.collect(Collectors.toSet());
 		return metadataStore.getMetadata(docIds);
 	}
 
-	private List<SearchResult> buildAndFilterResults(Map<String, Integer> matches,Map<Integer, BookMetadata> metadataMap,
-	                                                 String author, String lang, Integer year) {
-		List<SearchResult> results = new ArrayList<>();
+	private List<SearchHit> buildAndFilterResults(Map<String, Integer> matches, Map<Integer, BookInfo> metadataMap,
+	                                              String author, String lang, Integer year) {
+		List<SearchHit> results = new ArrayList<>();
 
 		for (Map.Entry<String, Integer> entry : matches.entrySet()) {
 			int docId = Integer.parseInt(entry.getKey());
-			BookMetadata meta = metadataMap.get(docId);
+			BookInfo meta = metadataMap.get(docId);
 
 			if (meta != null && meta.matches(author, lang, year)) {
 				results.add(mapToResult(docId, meta, entry.getValue()));
@@ -73,8 +73,8 @@ public class FindBooks implements BookSearch {
 		return results;
 	}
 
-	private SearchResult mapToResult(int id, BookMetadata meta, int frequency) {
-		return new SearchResult(
+	private SearchHit mapToResult(int id, BookInfo meta, int frequency) {
+		return new SearchHit(
 				id,
 				meta.title(),
 				meta.author(),

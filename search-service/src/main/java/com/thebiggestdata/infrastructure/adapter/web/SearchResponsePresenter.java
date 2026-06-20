@@ -1,7 +1,7 @@
 package com.thebiggestdata.infrastructure.adapter.web;
 
-import com.thebiggestdata.domain.entity.SearchCriteria;
-import com.thebiggestdata.domain.entity.SearchResult;
+import com.thebiggestdata.domain.entity.SearchQuery;
+import com.thebiggestdata.domain.entity.SearchHit;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 public class SearchResponsePresenter {
 
-	public Map<String, Object> formatSuccess(SearchCriteria criteria, List<SearchResult> results) {
+	public Map<String, Object> formatSuccess(SearchQuery criteria, List<SearchHit> results) {
 		Map<String, Object> response = new LinkedHashMap<>();
 		response.put("status", "success");
 		response.put("query", criteria.query());
@@ -29,7 +29,7 @@ public class SearchResponsePresenter {
 		return Map.of("status", "error", "message", message);
 	}
 
-	private Map<String, Object> extractFilters(SearchCriteria c) {
+	private Map<String, Object> extractFilters(SearchQuery c) {
 		Map<String, Object> filters = new LinkedHashMap<>();
 		if (c.author() != null) filters.put("author", c.author());
 		if (c.language() != null) filters.put("language", c.language());
@@ -37,7 +37,7 @@ public class SearchResponsePresenter {
 		return filters;
 	}
 
-	private Map<String, Object> mapSingleResult(SearchResult r) {
+	private Map<String, Object> mapSingleResult(SearchHit r) {
 		Map<String, Object> m = new LinkedHashMap<>();
 		m.put("id", r.id());
 		m.put("title", r.title());

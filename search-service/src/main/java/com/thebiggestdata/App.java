@@ -9,7 +9,7 @@ import com.thebiggestdata.infrastructure.adapter.sorter.SortById;
 import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastIndexStore;
 import com.thebiggestdata.infrastructure.adapter.hazelcast.HazelcastMetadataStore;
 import com.thebiggestdata.infrastructure.config.HazelcastConfig;
-import com.thebiggestdata.domain.gateway.SortingStrategy;
+import com.thebiggestdata.domain.gateway.RankingStrategy;
 import com.hazelcast.core.HazelcastInstance;
 import io.javalin.Javalin;
 import io.javalin.json.JsonMapper;
@@ -28,7 +28,7 @@ public class App {
         HazelcastIndexStore indexStore = new HazelcastIndexStore(hazelcastInstance);
         HazelcastMetadataStore metadataStore = new HazelcastMetadataStore(hazelcastInstance);
 
-        Map<String, SortingStrategy> strategies = new HashMap<>();
+        Map<String, RankingStrategy> strategies = new HashMap<>();
         strategies.put("frequency", new SortByFrequency());
         strategies.put("id", new SortById());
 
@@ -42,7 +42,7 @@ public class App {
 
         if (sortingEnv == null) sortingEnv = "frequency";
 
-        SortingStrategy selectedStrategy = strategies.getOrDefault(
+        RankingStrategy selectedStrategy = strategies.getOrDefault(
                 sortingEnv.toLowerCase(),
                 new SortByFrequency()
         );

@@ -1,4 +1,4 @@
-package com.thebiggestdata.ingestion.infrastructure.ports;
+package com.thebiggestdata.ingestion.infrastructure.ports.old;
 
 public interface IngestionQueueRepository {
     Integer pollNextBook();

@@ -1,5 +1,5 @@
 package com.thebiggestdata.domain.gateway;
 
-public interface RecoveryExecuter {
+public interface ReindexRunner {
         int executeRecovery();
 }

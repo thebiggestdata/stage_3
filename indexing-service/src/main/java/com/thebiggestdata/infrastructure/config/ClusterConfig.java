@@ -1,12 +1,12 @@
 package com.thebiggestdata.infrastructure.config;
 
-import com.thebiggestdata.infrastructure.adapter.hazelcast.BookContentSerializer;
-import com.thebiggestdata.infrastructure.adapter.hazelcast.BookMetadataSerializer;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.BookTextSerializer;
+import com.thebiggestdata.infrastructure.adapter.hazelcast.BookInfoSerializer;
 import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
-public class HazelcastConfig {
+public class ClusterConfig {
 
     public static final String INDEX_MAP = "inverted-index";
     public static final String METADATA_MAP = "bookMetadata";
@@ -18,8 +18,8 @@ public class HazelcastConfig {
 
         config.getSerializationConfig()
                 .getCompactSerializationConfig()
-                .addSerializer(new BookContentSerializer())
-                .addSerializer(new BookMetadataSerializer());
+                .addSerializer(new BookTextSerializer())
+                .addSerializer(new BookInfoSerializer());
 
         setMembersConfig(config);
         setMapConfig(config);

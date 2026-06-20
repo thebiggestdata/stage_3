@@ -1,15 +1,15 @@
 package com.thebiggestdata.usecase;
 
-import com.thebiggestdata.domain.gateway.Tokenizer;
+import com.thebiggestdata.domain.gateway.TextTokenizer;
 import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TermFrequencyAnalyzer {
+public class TermFrequencyCalculator {
 
-    private final Tokenizer tokenizer;
+    private final TextTokenizer tokenizer;
 
-    public TermFrequencyAnalyzer(Tokenizer tokenizer) {
+    public TermFrequencyCalculator(TextTokenizer tokenizer) {
         this.tokenizer = tokenizer;
     }
 

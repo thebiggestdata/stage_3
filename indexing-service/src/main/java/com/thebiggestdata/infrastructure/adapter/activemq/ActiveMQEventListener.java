@@ -8,14 +8,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.function.Consumer;
 
-public class ActiveMQMessageConsumer implements EventListener {
-    private static final Logger log = LoggerFactory.getLogger(ActiveMQMessageConsumer.class);
+public class ActiveMQEventListener implements EventListener {
+    private static final Logger log = LoggerFactory.getLogger(ActiveMQEventListener.class);
     private final ConnectionFactory factory;
     private final String queueName;
-    private final RebuildMessageListener rebuildListener;
+    private final ReindexMessageListener rebuildListener;
     private final Gson gson = new Gson();
 
-    public ActiveMQMessageConsumer(ConnectionFactory factory, String queueName, RebuildMessageListener rebuildListener) {
+    public ActiveMQEventListener(ConnectionFactory factory, String queueName, ReindexMessageListener rebuildListener) {
         this.factory = factory;
         this.queueName = queueName;
         this.rebuildListener = rebuildListener;

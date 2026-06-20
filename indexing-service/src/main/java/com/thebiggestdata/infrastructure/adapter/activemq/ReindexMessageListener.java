@@ -2,7 +2,7 @@ package com.thebiggestdata.infrastructure.adapter.activemq;
 
 import com.google.gson.Gson;
 import com.thebiggestdata.domain.entity.ReindexCommand;
-import com.thebiggestdata.infrastructure.adapter.recovery.ReindexingExecutor;
+import com.thebiggestdata.infrastructure.adapter.recovery.ReindexingRunnerImpl;
 import com.hazelcast.core.HazelcastInstance;
 import jakarta.jms.*;
 import org.slf4j.Logger;
@@ -13,18 +13,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class RebuildMessageListener {
-    private static final Logger log = LoggerFactory.getLogger(RebuildMessageListener.class);
+public class ReindexMessageListener {
+    private static final Logger log = LoggerFactory.getLogger(ReindexMessageListener.class);
     private static final String REBUILD_TOPIC = "index.rebuild.command";
     private static final DateTimeFormatter ISO_UTC = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC);
 
     private final HazelcastInstance hz;
-    private final ReindexingExecutor reindexingExecutor;
+    private final ReindexingRunnerImpl reindexingExecutor;
     private final ConnectionFactory factory;
     private final Gson gson = new Gson();
     private final AtomicBoolean rebuildInProgress = new AtomicBoolean(false);
 
-    public RebuildMessageListener(HazelcastInstance hz, ReindexingExecutor reindexingExecutor, ConnectionFactory factory) {
+    public ReindexMessageListener(HazelcastInstance hz, ReindexingRunnerImpl reindexingExecutor, ConnectionFactory factory) {
         this.hz = hz;
         this.reindexingExecutor = reindexingExecutor;
         this.factory = factory;

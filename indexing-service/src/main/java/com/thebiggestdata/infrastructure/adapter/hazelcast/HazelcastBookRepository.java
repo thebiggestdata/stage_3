@@ -7,11 +7,11 @@ import com.hazelcast.map.IMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HazelcastBookStore implements BookRepository {
-    private static final Logger log = LoggerFactory.getLogger(HazelcastBookStore.class);
+public class HazelcastBookRepository implements BookRepository {
+    private static final Logger log = LoggerFactory.getLogger(HazelcastBookRepository.class);
     private final IMap<Integer, BookText> datalake;
 
-    public HazelcastBookStore(HazelcastInstance hazelcastInstance) {
+    public HazelcastBookRepository(HazelcastInstance hazelcastInstance) {
         this.datalake = hazelcastInstance.getMap("datalake");
     }
 

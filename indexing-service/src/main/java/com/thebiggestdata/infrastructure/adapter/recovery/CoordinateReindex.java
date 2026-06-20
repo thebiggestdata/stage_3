@@ -1,7 +1,7 @@
 package com.thebiggestdata.infrastructure.adapter.recovery;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.infrastructure.adapter.activemq.ActiveMQIngestionControlPublisher;
+import com.thebiggestdata.infrastructure.adapter.activemq.ActiveMQIngestionSignalEmitter;
 import com.thebiggestdata.domain.entity.ReindexCommand;
 import com.thebiggestdata.domain.entity.ReindexOutcome;
 import com.hazelcast.core.HazelcastInstance;
@@ -13,13 +13,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
-public class CoordinateRebuild {
-    private static final Logger log = LoggerFactory.getLogger(CoordinateRebuild.class);
+public class CoordinateReindex {
+    private static final Logger log = LoggerFactory.getLogger(CoordinateReindex.class);
     private final HazelcastInstance hz;
     private final String brokerUrl;
     private final Gson gson = new Gson();
 
-    public CoordinateRebuild(HazelcastInstance hz, String brokerUrl) {
+    public CoordinateReindex(HazelcastInstance hz, String brokerUrl) {
         this.hz = hz;
         this.brokerUrl = brokerUrl;
     }
@@ -33,7 +33,7 @@ public class CoordinateRebuild {
             log.info("Starting rebuild coordination for {} nodes.", indexerCount);
 
             ConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
-            ActiveMQIngestionControlPublisher controlPublisher = new ActiveMQIngestionControlPublisher(factory);
+            ActiveMQIngestionSignalEmitter controlPublisher = new ActiveMQIngestionSignalEmitter(factory);
             controlPublisher.publishPause();
 
             ICountDownLatch latch = hz.getCPSubsystem().getCountDownLatch("rebuild-latch");
@@ -52,7 +52,7 @@ public class CoordinateRebuild {
 
     private void broadcastRebuildCommand() throws JMSException {
         ConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
-        ActiveMQIngestionControlPublisher controlPublisher = new ActiveMQIngestionControlPublisher(factory);
+        ActiveMQIngestionSignalEmitter controlPublisher = new ActiveMQIngestionSignalEmitter(factory);
         try (Connection connection = factory.createConnection()) {
             connection.start();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -65,7 +65,7 @@ public class CoordinateRebuild {
         }
     }
 
-    private void waitForCompletion(ICountDownLatch latch, ActiveMQIngestionControlPublisher publisher, int count) {
+    private void waitForCompletion(ICountDownLatch latch, ActiveMQIngestionSignalEmitter publisher, int count) {
         try {
             if (latch.await(1, TimeUnit.HOURS)) {
                 log.info("REBUILD COMPLETE. Resuming ingestion.");

@@ -5,13 +5,13 @@ import com.thebiggestdata.domain.gateway.IngestionSignalEmitter;
 import com.thebiggestdata.domain.entity.IngestionSignal;
 import jakarta.jms.*;
 
-public class ActiveMQIngestionControlPublisher implements IngestionSignalEmitter {
+public class ActiveMQIngestionSignalEmitter implements IngestionSignalEmitter {
 
     private final ConnectionFactory factory;
     private final Gson gson = new Gson();
     private static final String TOPIC_NAME = "ingestion.control";
 
-    public ActiveMQIngestionControlPublisher(ConnectionFactory factory) {
+    public ActiveMQIngestionSignalEmitter(ConnectionFactory factory) {
         this.factory = factory;
     }
 

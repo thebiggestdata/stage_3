@@ -1,4 +1,4 @@
-package com.thebiggestdata.indexing.infrastructure.ports;
+package com.thebiggestdata.indexing.infrastructure.ports.old;
 
 import java.util.Collection;
 import java.util.Set;

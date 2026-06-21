@@ -1,4 +1,4 @@
-package com.thebiggestdata.indexing.infrastructure.ports;
+package com.thebiggestdata.indexing.infrastructure.ports.old;
 
 import com.thebiggestdata.indexing.model.BookContent;
 

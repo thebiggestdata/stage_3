@@ -40,7 +40,7 @@ public class IngestBookUseCase implements IngestBookPort {
         try {
             if (downloadStatus.isDownloaded(bookId)) {
                 log.warn("Book {} already downloaded, skipping.", bookId);
-                return IngestionResult.present(bookId);
+                return IngestionResult.alreadyIngested(bookId);
             }
 
             BookContent content = bookProvider.getBookContent(bookId);

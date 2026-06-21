@@ -1,9 +1,9 @@
 package com.thebiggestdata.indexing.application.usecases.indexingservice;
 
-import com.thebiggestdata.indexing.infrastructure.ports.BookStore;
-import com.thebiggestdata.indexing.infrastructure.ports.IndexStore;
-import com.thebiggestdata.indexing.infrastructure.ports.IndexingStatusStore;
-import com.thebiggestdata.indexing.infrastructure.ports.MetadataStore;
+import com.thebiggestdata.indexing.infrastructure.ports.old.BookStore;
+import com.thebiggestdata.indexing.infrastructure.ports.old.IndexStore;
+import com.thebiggestdata.indexing.infrastructure.ports.old.IndexingStatusStore;
+import com.thebiggestdata.indexing.infrastructure.ports.old.MetadataStore;
 import com.thebiggestdata.indexing.model.BookContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,13 +39,13 @@ public class IndexBook {
             BookContent content = bookStore.getBookContent(documentId);
 
             Map<String, Long> frequencies = analyzer.analyze(content.body());
-            int totalTokens = analyzer.countTotalTokens(content.body());
+            // int totalTokens = analyzer.countTotalTokens(content.body());
 
             saveInvertedIndex(documentId, frequencies);
             metadataStore.saveMetadata(documentId, content.header());
 
-            indexStore.saveTokens(totalTokens);
-            log.info("Done indexing for document: {}. Token count: {}\n", documentId, totalTokens);
+            // indexStore.saveTokens(totalTokens);
+            // log.info("Done indexing for document: {}. Token count: {}\n", documentId, totalTokens);
         } catch (Exception e) {
             log.error("Error indexing document {}: {}", documentId, e.getMessage());
             throw new RuntimeException("Failed to index document: " + documentId, e);

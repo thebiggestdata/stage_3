@@ -2,8 +2,8 @@ package com.thebiggestdata.indexing.infrastructure.adapters.recovery;
 
 
 import com.thebiggestdata.indexing.application.usecases.indexingservice.IndexBook;
-import com.thebiggestdata.indexing.infrastructure.ports.BookStore;
-import com.thebiggestdata.indexing.infrastructure.ports.RecoveryExecuter;
+import com.thebiggestdata.indexing.infrastructure.ports.old.BookStore;
+import com.thebiggestdata.indexing.infrastructure.ports.old.RecoveryExecuter;
 import com.thebiggestdata.indexing.model.BookContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

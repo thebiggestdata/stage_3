@@ -37,7 +37,7 @@ public class IngestBook {
         try {
             if (downloadLog.isDownloaded(bookId)) {
                 log.warn("BookContent {} already downloaded, skipping.", bookId);
-                return IngestionResult.present(bookId);
+                return IngestionResult.alreadyIngested(bookId);
             }
 
             String[] rawContent = bookProvider.getBookContent(bookId);

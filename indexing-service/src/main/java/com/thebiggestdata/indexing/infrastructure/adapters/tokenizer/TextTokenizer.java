@@ -1,6 +1,6 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.tokenizer;
 
-import com.thebiggestdata.indexing.infrastructure.ports.Tokenizer;
+import com.thebiggestdata.indexing.infrastructure.ports.old.Tokenizer;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;

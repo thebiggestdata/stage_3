@@ -17,7 +17,7 @@ import com.thebiggestdata.indexing.infrastructure.adapters.hazelcast.HazelcastIn
 import com.thebiggestdata.indexing.application.usecases.indexingservice.IndexBook;
 import com.thebiggestdata.indexing.application.usecases.indexingservice.TermFrequencyAnalyzer;
 import com.thebiggestdata.indexing.infrastructure.config.HazelcastConfig;
-import com.thebiggestdata.indexing.infrastructure.ports.MessageConsumer;
+import com.thebiggestdata.indexing.infrastructure.ports.old.MessageConsumer;
 import com.hazelcast.core.HazelcastInstance;
 import io.javalin.Javalin;
 import org.apache.activemq.ActiveMQConnectionFactory;

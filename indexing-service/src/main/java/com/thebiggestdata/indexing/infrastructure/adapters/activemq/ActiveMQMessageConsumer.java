@@ -2,7 +2,7 @@ package com.thebiggestdata.indexing.infrastructure.adapters.activemq;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.thebiggestdata.indexing.infrastructure.ports.MessageConsumer;
+import com.thebiggestdata.indexing.infrastructure.ports.old.MessageConsumer;
 import jakarta.jms.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

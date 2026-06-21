@@ -1,15 +1,15 @@
 package com.thebiggestdata.indexing.application.usecases.indexingservice;
 
-import com.thebiggestdata.indexing.infrastructure.ports.Tokenizer;
+import com.thebiggestdata.indexing.infrastructure.ports.TokenizerPort;
 import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class TermFrequencyAnalyzer {
 
-    private final Tokenizer tokenizer;
+    private final TokenizerPort tokenizer;
 
-    public TermFrequencyAnalyzer(Tokenizer tokenizer) {
+    public TermFrequencyAnalyzer(TokenizerPort tokenizer) {
         this.tokenizer = tokenizer;
     }
 
@@ -26,8 +26,7 @@ public class TermFrequencyAnalyzer {
                 ));
     }
 
-    public int countTotalTokens(String text) {
-        if (text == null || text.isBlank()) return 0;
-        return tokenizer.tokenize(text).size();
+    public int countTotalTokens(Map<String, Long> frequencies) {
+        return frequencies.values().stream().mapToInt(Long::intValue).sum();
     }
 }

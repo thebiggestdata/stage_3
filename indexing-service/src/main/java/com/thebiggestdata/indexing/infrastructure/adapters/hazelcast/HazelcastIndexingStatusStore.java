@@ -1,6 +1,6 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.hazelcast;
 
-import com.thebiggestdata.indexing.infrastructure.ports.IndexingStatusStore;
+import com.thebiggestdata.indexing.infrastructure.ports.old.IndexingStatusStore;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
 

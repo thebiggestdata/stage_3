@@ -2,7 +2,7 @@ package com.thebiggestdata.indexing.infrastructure.adapters.tokenizer;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.thebiggestdata.indexing.infrastructure.ports.StopWordsLoader;
+import com.thebiggestdata.indexing.infrastructure.ports.old.StopWordsLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

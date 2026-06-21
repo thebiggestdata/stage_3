@@ -1,5 +1,5 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.hazelcast;
-import com.thebiggestdata.indexing.infrastructure.ports.IndexStore;
+import com.thebiggestdata.indexing.infrastructure.ports.old.IndexStore;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;

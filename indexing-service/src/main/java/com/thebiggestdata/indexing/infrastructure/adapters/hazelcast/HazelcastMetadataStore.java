@@ -1,6 +1,6 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.hazelcast;
 
-import com.thebiggestdata.indexing.infrastructure.ports.MetadataStore;
+import com.thebiggestdata.indexing.infrastructure.ports.old.MetadataStore;
 import com.thebiggestdata.indexing.model.BookContent;
 import com.thebiggestdata.indexing.model.BookMetadata;
 import com.hazelcast.core.HazelcastInstance;

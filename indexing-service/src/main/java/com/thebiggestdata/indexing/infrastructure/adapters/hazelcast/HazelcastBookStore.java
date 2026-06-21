@@ -1,6 +1,6 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.hazelcast;
 
-import com.thebiggestdata.indexing.infrastructure.ports.BookStore;
+import com.thebiggestdata.indexing.infrastructure.ports.old.BookStore;
 import com.thebiggestdata.indexing.model.BookContent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;

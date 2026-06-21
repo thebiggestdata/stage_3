@@ -1,7 +1,7 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.activemq;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.indexing.infrastructure.ports.IngestionControlPublisher;
+import com.thebiggestdata.indexing.infrastructure.ports.old.IngestionControlPublisher;
 import com.thebiggestdata.indexing.model.IngestionControlEvent;
 import jakarta.jms.*;
 

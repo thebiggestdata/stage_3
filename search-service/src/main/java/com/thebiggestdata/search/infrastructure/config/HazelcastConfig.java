@@ -3,6 +3,7 @@ package com.thebiggestdata.search.infrastructure.config;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.Hazelcast;
@@ -32,9 +33,13 @@ public final class HazelcastConfig {
 
     private void configureDataStructures(Config config) {
         int backups = environmentInt("HAZELCAST_BACKUP_COUNT", 1);
+        NearCacheConfig indexNearCache = new NearCacheConfig()
+                .setName(HazelcastNames.INVERTED_INDEX + ":*")
+                .setInvalidateOnChange(true);
         config.addMapConfig(new MapConfig(HazelcastNames.INVERTED_INDEX + ":*")
                 .setBackupCount(backups)
-                .setAsyncBackupCount(0));
+                .setAsyncBackupCount(0)
+                .setNearCacheConfig(indexNearCache));
         config.addMapConfig(new MapConfig(HazelcastNames.BOOK_METADATA + ":*").setBackupCount(backups));
         config.addMapConfig(new MapConfig(HazelcastNames.INDEX_GENERATIONS).setBackupCount(backups));
         config.addSetConfig(new SetConfig(HazelcastNames.INDEXED_BOOKS + ":*").setBackupCount(backups));

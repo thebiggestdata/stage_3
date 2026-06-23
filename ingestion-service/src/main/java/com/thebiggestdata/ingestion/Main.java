@@ -106,7 +106,8 @@ public final class Main {
                 new ActiveMQBookIngestedPublisher(
                         eventSender,
                         new BookIngestedMessageMapper(gson)
-                )
+                ),
+                nodeId
         );
 
         RunIngestionCycleUseCase runIngestionCycle = new RunIngestionCycleUseCase(

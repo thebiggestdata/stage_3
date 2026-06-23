@@ -79,6 +79,6 @@ public final class HazelcastReplicationWorker implements AutoCloseable {
         BookContent content = datalake.get(bookId);
         storage.save(new Book(bookId, content));
         replicaRegistry.register(bookId, localNodeId);
-        log.info("Stored replica for book {} on node {}", bookId, localNodeId);
+        log.info("REPLICA_STORED bookId={} nodeId={}", bookId, localNodeId);
     }
 }

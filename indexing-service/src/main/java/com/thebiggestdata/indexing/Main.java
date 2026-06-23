@@ -74,7 +74,8 @@ public final class Main {
                 metadata,
                 tokenMetrics,
                 new TermFrequencyAnalyzer(new TextTokenizer(new JsonStopWordsLoader().load())),
-                new GutenbergMetadataExtractor()
+                new GutenbergMetadataExtractor(),
+                topology.localNodeId()
         );
         RecoverIndexUseCase recoverIndex = new RecoverIndexUseCase(
                 new FilesystemBookArchive(configuration.datalakeRoot()),

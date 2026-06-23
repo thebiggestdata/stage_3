@@ -156,7 +156,8 @@ class RunIngestionCycleUseCaseTest {
                 ignored -> {},
                 ignored -> {},
                 book -> new ReplicationResult(book.bookId(), 1, List.of("node-a")),
-                ignored -> {}
+                ignored -> {},
+                "test-node"
         );
     }
 

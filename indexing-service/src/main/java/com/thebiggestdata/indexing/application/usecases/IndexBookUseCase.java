@@ -29,6 +29,7 @@ public final class IndexBookUseCase {
     private final TokenMetrics tokenMetrics;
     private final TermFrequencyAnalyzer analyzer;
     private final MetadataExtractor metadataExtractor;
+    private final String localNodeId;
 
     public IndexBookUseCase(
             BookContentStore books,
@@ -38,7 +39,8 @@ public final class IndexBookUseCase {
             MetadataStore metadata,
             TokenMetrics tokenMetrics,
             TermFrequencyAnalyzer analyzer,
-            MetadataExtractor metadataExtractor
+            MetadataExtractor metadataExtractor,
+            String localNodeId
     ) {
         this.books = books;
         this.index = index;
@@ -48,6 +50,7 @@ public final class IndexBookUseCase {
         this.tokenMetrics = tokenMetrics;
         this.analyzer = analyzer;
         this.metadataExtractor = metadataExtractor;
+        this.localNodeId = localNodeId;
     }
 
     public IndexingResult execute(int bookId) {
@@ -85,6 +88,14 @@ public final class IndexBookUseCase {
                 removeIndexedBook(bookId);
             }
 
+            log.info(
+                    "INDEXED bookId={} nodeId={} generation={} terms={} tokens={}",
+                    bookId,
+                    localNodeId,
+                    generation.value(),
+                    terms.size(),
+                    analysis.totalTokens()
+            );
             return IndexingResult.indexed(bookId, terms.size(), analysis.totalTokens());
         } catch (RuntimeException e) {
             tracker.release(generation, bookId);

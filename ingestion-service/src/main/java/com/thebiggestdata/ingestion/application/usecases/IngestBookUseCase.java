@@ -11,8 +11,12 @@ import com.thebiggestdata.ingestion.infrastructure.ports.IngestionState;
 import com.thebiggestdata.ingestion.model.BookIngestedEvent;
 import com.thebiggestdata.ingestion.model.IngestionResult;
 import com.thebiggestdata.ingestion.model.Book;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class IngestBookUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(IngestBookUseCase.class);
 
     private final BookDownloadStatus downloadStatus;
     private final IngestionState ingestionState;
@@ -22,6 +26,7 @@ public class IngestBookUseCase {
     private final Datalake datalake;
     private final BookReplicator bookReplicator;
     private final BookIngestedPublisher publisher;
+    private final String localNodeId;
 
     public IngestBookUseCase(
             BookDownloadStatus downloadStatus,
@@ -31,7 +36,8 @@ public class IngestBookUseCase {
             BookStorage bookStorage,
             Datalake datalake,
             BookReplicator bookReplicator,
-            BookIngestedPublisher publisher
+            BookIngestedPublisher publisher,
+            String localNodeId
     ) {
         this.downloadStatus = downloadStatus;
         this.ingestionState = ingestionState;
@@ -41,6 +47,7 @@ public class IngestBookUseCase {
         this.datalake = datalake;
         this.bookReplicator = bookReplicator;
         this.publisher = publisher;
+        this.localNodeId = localNodeId;
     }
 
     public IngestionResult execute(int bookId) {
@@ -73,6 +80,7 @@ public class IngestBookUseCase {
             publisher.publish(new BookIngestedEvent(bookId));
             downloadStatus.markAsDownloaded(bookId);
 
+            log.info("INGESTED bookId={} nodeId={}", bookId, localNodeId);
             return IngestionResult.ingested(bookId);
         } finally {
             ingestionGuard.release(bookId);

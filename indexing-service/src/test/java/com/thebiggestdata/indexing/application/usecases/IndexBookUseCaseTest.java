@@ -120,7 +120,8 @@ class IndexBookUseCaseTest {
                 metadataStore,
                 tokenMetrics,
                 new TermFrequencyAnalyzer(text -> List.of("clean", "code", "clean")),
-                header -> new BookMetadata("Title", "Author", "English", 2026)
+                header -> new BookMetadata("Title", "Author", "English", 2026),
+                "test-node"
         );
     }
 

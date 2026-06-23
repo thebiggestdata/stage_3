@@ -40,7 +40,8 @@ class IngestBookUseCaseTest {
                     operations.add("replicate");
                     return new ReplicationResult(42, 2, List.of("node-a", "node-b"));
                 },
-                ignored -> operations.add("publish")
+                ignored -> operations.add("publish"),
+                "test-node"
         );
 
         IngestionResult result = useCase.execute(42);
@@ -94,7 +95,8 @@ class IngestBookUseCaseTest {
                 ignored -> {},
                 ignored -> {},
                 ignored -> new ReplicationResult(7, 1, List.of("node-a")),
-                ignored -> {}
+                ignored -> {},
+                "test-node"
         );
 
         IngestionResult result = useCase.execute(7);
@@ -116,7 +118,8 @@ class IngestBookUseCaseTest {
                 ignored -> {},
                 ignored -> {},
                 ignored -> new ReplicationResult(7, 1, List.of("node-a")),
-                ignored -> {}
+                ignored -> {},
+                "test-node"
         );
 
         assertThrows(IllegalStateException.class, () -> useCase.execute(7));
@@ -136,7 +139,8 @@ class IngestBookUseCaseTest {
                 ignored -> operations.add("store"),
                 ignored -> operations.add("datalake"),
                 ignored -> new ReplicationResult(7, 1, List.of("node-a")),
-                ignored -> operations.add("publish")
+                ignored -> operations.add("publish"),
+                "test-node"
         );
     }
 

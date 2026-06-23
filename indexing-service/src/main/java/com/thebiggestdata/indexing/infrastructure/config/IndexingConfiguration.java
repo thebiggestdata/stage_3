@@ -14,6 +14,8 @@ public record IndexingConfiguration(
         int maxRedeliveries,
         int indexWriters,
         Duration indexingClaimLease,
+        Duration inProgressRetryTimeout,
+        Duration inProgressRetryDelay,
         Duration rebuildTimeout,
         int lastBookId
 ) {
@@ -26,9 +28,11 @@ public record IndexingConfiguration(
                 positiveInt(environment, "SERVICE_PORT", 7002),
                 positiveInt(environment, "INDEXING_CONSUMERS", 2),
                 positiveInt(environment, "ACTIVEMQ_PREFETCH", 1),
-                nonNegativeInt(environment, "ACTIVEMQ_MAX_REDELIVERIES", 5),
-                positiveInt(environment, "INDEX_WRITERS", 1),
+                nonNegativeInt(environment, "ACTIVEMQ_MAX_REDELIVERIES", 50),
+                positiveInt(environment, "INDEX_WRITERS", 2),
                 duration(environment, "INDEXING_CLAIM_LEASE_MS", 300_000),
+                duration(environment, "INDEXING_IN_PROGRESS_RETRY_TIMEOUT_MS", 600_000),
+                duration(environment, "INDEXING_IN_PROGRESS_RETRY_DELAY_MS", 1_000),
                 duration(environment, "REBUILD_TIMEOUT_MS", 600_000),
                 positiveInt(environment, "LAST_BOOK_ID", 100_000)
         );

@@ -115,7 +115,12 @@ public final class Main {
                 coordination,
                 topology
         );
-        HandleBookIngestedUseCase handleBookIngested = new HandleBookIngestedUseCase(indexBook, rebuildState);
+        HandleBookIngestedUseCase handleBookIngested = new HandleBookIngestedUseCase(
+                indexBook,
+                rebuildState,
+                configuration.inProgressRetryTimeout(),
+                configuration.inProgressRetryDelay()
+        );
 
         ActiveMQRebuildCommandConsumer rebuildConsumer = new ActiveMQRebuildCommandConsumer(
                 jmsFactory,

@@ -1,30 +1,33 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.hazelcast;
 
-import com.thebiggestdata.indexing.infrastructure.ports.old.MetadataStore;
-import com.thebiggestdata.indexing.model.BookContent;
-import com.thebiggestdata.indexing.model.BookMetadata;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.thebiggestdata.indexing.infrastructure.ports.MetadataStore;
+import com.thebiggestdata.indexing.model.BookMetadata;
+import com.thebiggestdata.indexing.model.IndexGeneration;
 
-public class HazelcastMetadataStore implements MetadataStore {
+public final class HazelcastMetadataStore implements MetadataStore {
 
-    private static final Logger log = LoggerFactory.getLogger(HazelcastMetadataStore.class);
-    private final MetadataParser parser;
-    private final IMap<Integer, BookContent> datalake;
-    private final IMap<Integer, BookMetadata> metadataMap;
+    private final HazelcastInstance hazelcast;
 
-    public HazelcastMetadataStore(HazelcastInstance hazelcastInstance, MetadataParser parser) {
-        this.parser = parser;
-        this.metadataMap = hazelcastInstance.getMap("bookMetadata");
-        this.datalake = hazelcastInstance.getMap("datalake");
+    public HazelcastMetadataStore(HazelcastInstance hazelcast) {
+        this.hazelcast = hazelcast;
     }
 
     @Override
-    public void saveMetadata(int bookId, String header) {
-        BookMetadata metadata = parser.parseFromHeader(header);
-        metadataMap.put(bookId, metadata);
-        datalake.remove(bookId);
+    public void save(IndexGeneration generation, int bookId, BookMetadata bookMetadata) {
+        metadata(generation).put(bookId, bookMetadata);
+    }
+
+    @Override
+    public void clear(IndexGeneration generation) {
+        metadata(generation).clear();
+    }
+
+    private IMap<Integer, BookMetadata> metadata(IndexGeneration generation) {
+        return hazelcast.getMap(HazelcastNames.generated(
+                HazelcastNames.BOOK_METADATA,
+                generation.value()
+        ));
     }
 }

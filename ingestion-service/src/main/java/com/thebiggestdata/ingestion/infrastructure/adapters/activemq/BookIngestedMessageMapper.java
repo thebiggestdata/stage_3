@@ -21,7 +21,8 @@ public final class BookIngestedMessageMapper {
         return Map.of(
                 "bookId", event.bookId(),
                 "event", event.event(),
-                "timestamp", event.timestamp()
+                "timestamp", event.timestamp(),
+                "sourceNodeId", event.sourceNodeId()
         );
     }
 }

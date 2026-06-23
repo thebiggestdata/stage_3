@@ -1,6 +1,6 @@
 package com.thebiggestdata.indexing.model;
 
-public record BookIngestedEvent(int bookId, String event, String timestamp) {
+public record BookIngestedEvent(int bookId, String event, String timestamp, String sourceNodeId) {
 
     public BookIngestedEvent {
         if (bookId < 1) {
@@ -12,5 +12,6 @@ public record BookIngestedEvent(int bookId, String event, String timestamp) {
         if (timestamp == null || timestamp.isBlank()) {
             throw new IllegalArgumentException("timestamp must not be blank");
         }
+        sourceNodeId = sourceNodeId == null || sourceNodeId.isBlank() ? "unknown" : sourceNodeId;
     }
 }

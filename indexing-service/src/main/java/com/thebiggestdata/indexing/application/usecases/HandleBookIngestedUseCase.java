@@ -16,7 +16,7 @@ public final class HandleBookIngestedUseCase {
 
     public void execute(BookIngestedEvent event) {
         rebuildState.awaitCompletion();
-        IndexingResult result = indexBook.execute(event.bookId());
+        IndexingResult result = indexBook.execute(event.bookId(), event.sourceNodeId());
         if (result.status() == IndexingResult.Status.FAILED
                 || result.status() == IndexingResult.Status.IN_PROGRESS) {
             throw new IndexingNotCompletedException(result);

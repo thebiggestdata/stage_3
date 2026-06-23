@@ -54,13 +54,26 @@ public final class IndexBookUseCase {
     }
 
     public IndexingResult execute(int bookId) {
-        return execute(bookId, generations.active(), true);
+        return execute(bookId, "unknown");
+    }
+
+    public IndexingResult execute(int bookId, String sourceNodeId) {
+        return execute(bookId, generations.active(), true, sourceNodeId);
     }
 
     public IndexingResult execute(
             int bookId,
             IndexGeneration generation,
             boolean removeFromLiveDatalake
+    ) {
+        return execute(bookId, generation, removeFromLiveDatalake, "unknown");
+    }
+
+    public IndexingResult execute(
+            int bookId,
+            IndexGeneration generation,
+            boolean removeFromLiveDatalake,
+            String sourceNodeId
     ) {
         IndexingClaim claim = tracker.claim(generation, bookId);
         if (claim == IndexingClaim.ALREADY_INDEXED) {
@@ -89,8 +102,9 @@ public final class IndexBookUseCase {
             }
 
             log.info(
-                    "INDEXED bookId={} nodeId={} generation={} terms={} tokens={}",
+                    "INDEXED bookId={} ingestedBy={} indexedBy={} generation={} terms={} tokens={}",
                     bookId,
+                    sourceNodeId == null || sourceNodeId.isBlank() ? "unknown" : sourceNodeId,
                     localNodeId,
                     generation.value(),
                     terms.size(),

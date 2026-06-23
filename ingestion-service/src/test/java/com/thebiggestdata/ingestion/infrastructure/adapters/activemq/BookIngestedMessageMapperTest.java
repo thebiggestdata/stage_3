@@ -27,7 +27,9 @@ class BookIngestedMessageMapperTest {
         assertEquals(42, json.get("bookId").getAsInt());
         assertEquals("document.ingested", json.get("event").getAsString());
         assertEquals("2026-06-22T12:00:00Z", json.get("timestamp").getAsString());
+        assertEquals("unknown", json.get("sourceNodeId").getAsString());
         assertEquals(42, properties.get("bookId"));
         assertEquals("document.ingested", properties.get("event"));
+        assertEquals("unknown", properties.get("sourceNodeId"));
     }
 }

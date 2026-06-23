@@ -77,7 +77,7 @@ public class IngestBookUseCase {
             bookStorage.save(book);
             datalake.save(book);
             bookReplicator.replicate(book);
-            publisher.publish(new BookIngestedEvent(bookId));
+            publisher.publish(new BookIngestedEvent(bookId, localNodeId));
             downloadStatus.markAsDownloaded(bookId);
 
             log.info("INGESTED bookId={} nodeId={}", bookId, localNodeId);

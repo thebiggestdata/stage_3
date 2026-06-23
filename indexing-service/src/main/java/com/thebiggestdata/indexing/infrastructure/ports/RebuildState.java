@@ -1,5 +1,6 @@
 package com.thebiggestdata.indexing.infrastructure.ports;
 
-public interface RecoveryPort {
-    int executeRecovery();
+public interface RebuildState {
+
+    void awaitCompletion();
 }

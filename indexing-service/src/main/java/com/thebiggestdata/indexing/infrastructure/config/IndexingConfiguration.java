@@ -19,16 +19,15 @@ public record IndexingConfiguration(
 ) {
 
     public static IndexingConfiguration load(String[] arguments, Map<String, String> environment) {
-        int processors = Runtime.getRuntime().availableProcessors();
         return new IndexingConfiguration(
                 Path.of(arguments.length == 0 ? "datalake" : arguments[0]),
                 value(environment, "BROKER_URL", "tcp://localhost:61616"),
                 value(environment, "HAZELCAST_CLUSTER_NAME", "SearchEngine"),
                 positiveInt(environment, "SERVICE_PORT", 7002),
-                positiveInt(environment, "INDEXING_CONSUMERS", Math.max(1, processors)),
-                positiveInt(environment, "ACTIVEMQ_PREFETCH", 100),
+                positiveInt(environment, "INDEXING_CONSUMERS", 2),
+                positiveInt(environment, "ACTIVEMQ_PREFETCH", 1),
                 nonNegativeInt(environment, "ACTIVEMQ_MAX_REDELIVERIES", 5),
-                positiveInt(environment, "INDEX_WRITERS", Math.max(1, processors)),
+                positiveInt(environment, "INDEX_WRITERS", 1),
                 duration(environment, "INDEXING_CLAIM_LEASE_MS", 300_000),
                 duration(environment, "REBUILD_TIMEOUT_MS", 600_000),
                 positiveInt(environment, "LAST_BOOK_ID", 100_000)

@@ -10,11 +10,11 @@ services:
     environment:
       HZ_PORT: "5701"
       HZ_PUBLIC_ADDRESS: ${HZ_PUBLIC_ADDRESS:-ingestion-service}:5701
-      HZ_MEMBERS: ${MASTER_IP:-ingestion-service}:5701,${MASTER_IP:-indexing-service}:5702,${MASTER_IP:-search-service}:5703
+      HZ_MEMBERS: ${MASTER_IP:-ingestion-service}:5701
       HAZELCAST_CLUSTER_NAME: SearchEngine
       HAZELCAST_BACKUP_COUNT: ${HAZELCAST_BACKUP_COUNT:-1}
       BROKER_URL: tcp://${MASTER_IP:-activemq}:61616
-      REPLICATION_FACTOR: ${REPLICATION_FACTOR:-1}
+      REPLICATION_FACTOR: ${REPLICATION_FACTOR:-2}
       INDEXING_BUFFER_FACTOR: ${INDEXING_BUFFER_FACTOR:-20}
       INGESTION_WORKERS: ${INGESTION_WORKERS:-4}
       SERVICE_PORT: "7001"
@@ -36,7 +36,7 @@ services:
     environment:
       HZ_PORT: "5702"
       HZ_PUBLIC_ADDRESS: ${HZ_PUBLIC_ADDRESS:-indexing-service}:5702
-      HZ_MEMBERS: ${MASTER_IP:-ingestion-service}:5701,${MASTER_IP:-indexing-service}:5702,${MASTER_IP:-search-service}:5703
+      HZ_MEMBERS: ${MASTER_IP:-ingestion-service}:5701
       HAZELCAST_CLUSTER_NAME: SearchEngine
       HAZELCAST_BACKUP_COUNT: ${HAZELCAST_BACKUP_COUNT:-1}
       BROKER_URL: tcp://${MASTER_IP:-activemq}:61616
@@ -60,7 +60,7 @@ services:
       HZ_PORT: "5703"
       SERVICE_PORT: "7003"
       HZ_PUBLIC_ADDRESS: ${HZ_PUBLIC_ADDRESS:-search-service}:5703
-      HZ_MEMBERS: ${MASTER_IP:-ingestion-service}:5701,${MASTER_IP:-indexing-service}:5702,${MASTER_IP:-search-service}:5703
+      HZ_MEMBERS: ${MASTER_IP:-ingestion-service}:5701
       HAZELCAST_CLUSTER_NAME: SearchEngine
       HAZELCAST_BACKUP_COUNT: ${HAZELCAST_BACKUP_COUNT:-1}
       SORTING_CRITERIA: "frequency"
@@ -80,7 +80,7 @@ services:
       BENCHMARK_SAMPLE_SECONDS: ${BENCHMARK_SAMPLE_SECONDS:-10}
       HZ_PORT: "5704"
       HZ_PUBLIC_ADDRESS: ${HZ_PUBLIC_ADDRESS:-benchmark}:5704
-      HZ_MEMBERS: ${MASTER_IP:-ingestion-service}:5701,${MASTER_IP:-indexing-service}:5702,${MASTER_IP:-search-service}:5703
+      HZ_MEMBERS: ${MASTER_IP:-ingestion-service}:5701
       HAZELCAST_CLUSTER_NAME: SearchEngine
     networks:
       - search_net

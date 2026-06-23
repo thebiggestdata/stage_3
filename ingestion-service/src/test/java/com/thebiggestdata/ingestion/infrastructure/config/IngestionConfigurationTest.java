@@ -16,7 +16,7 @@ class IngestionConfigurationTest {
 
         assertEquals(Path.of("datalake"), configuration.datalakeRoot());
         assertEquals("tcp://localhost:61616", configuration.brokerUrl());
-        assertEquals(1, configuration.replicationFactor());
+        assertEquals(2, configuration.replicationFactor());
         assertEquals(20, configuration.indexingBufferFactor());
         assertEquals(4, configuration.ingestionWorkers());
         assertEquals(7001, configuration.servicePort());

@@ -32,7 +32,7 @@ public record IngestionConfiguration(
                 value(environment, "BROKER_URL", "tcp://localhost:61616"),
                 value(environment, "HAZELCAST_CLUSTER_NAME", "SearchEngine"),
                 nodeId(environment),
-                positiveInt(environment, "REPLICATION_FACTOR", 1),
+                positiveInt(environment, "REPLICATION_FACTOR", 2),
                 positiveInt(environment, "INDEXING_BUFFER_FACTOR", 20),
                 positiveInt(environment, "INGESTION_WORKERS", 4),
                 positiveInt(environment, "SERVICE_PORT", 7001),

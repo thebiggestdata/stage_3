@@ -1,7 +1,6 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.thebiggestdata.indexing.infrastructure.ports.InvertedIndex;
 import com.thebiggestdata.indexing.model.IndexGeneration;
@@ -9,7 +8,6 @@ import com.thebiggestdata.indexing.model.IndexedTerm;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -47,7 +45,14 @@ public final class HazelcastInvertedIndex implements InvertedIndex, AutoCloseabl
     }
 
     private void add(IMap<String, Set<String>> index, IndexedTerm term) {
-        index.executeOnKey(term.term(), new AddPosting(encodePosting(term)));
+        index.lock(term.term());
+        try {
+            Set<String> postings = new HashSet<>(index.getOrDefault(term.term(), Set.of()));
+            postings.add(encodePosting(term));
+            index.put(term.term(), postings);
+        } finally {
+            index.unlock(term.term());
+        }
     }
 
     private String encodePosting(IndexedTerm term) {
@@ -64,26 +69,6 @@ public final class HazelcastInvertedIndex implements InvertedIndex, AutoCloseabl
                 HazelcastNames.INVERTED_INDEX,
                 generation.value()
         ));
-    }
-
-    private static final class AddPosting implements EntryProcessor<String, Set<String>, Void> {
-
-        private final String posting;
-
-        private AddPosting(String posting) {
-            this.posting = posting;
-        }
-
-        @Override
-        public Void process(Map.Entry<String, Set<String>> entry) {
-            Set<String> postings = entry.getValue() == null
-                    ? new HashSet<>()
-                    : new HashSet<>(entry.getValue());
-
-            postings.add(posting);
-            entry.setValue(postings);
-            return null;
-        }
     }
 
     @Override

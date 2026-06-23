@@ -1,85 +1,180 @@
 package com.thebiggestdata.ingestion;
 
-import com.thebiggestdata.ingestion.application.usecases.BookIngestionPeriodicExecutor;
-import com.thebiggestdata.ingestion.infrastructure.adapters.bookprovider.*;
-import com.thebiggestdata.ingestion.infrastructure.adapters.filesystem.BookStorageDate;
-import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastIngestionRepository;
-import com.thebiggestdata.ingestion.infrastructure.adapters.web.BookProviderController;
-import com.thebiggestdata.ingestion.application.usecases.IngestBook;
-import com.thebiggestdata.ingestion.infrastructure.adapters.activemq.ActiveMQBookIngestedNotifier;
+import com.google.gson.Gson;
+import com.hazelcast.core.HazelcastInstance;
+import com.thebiggestdata.ingestion.application.usecases.GetBookStatusUseCase;
+import com.thebiggestdata.ingestion.application.usecases.InMemoryIngestionState;
+import com.thebiggestdata.ingestion.application.usecases.IngestBookUseCase;
+import com.thebiggestdata.ingestion.application.usecases.ListDownloadedBooksUseCase;
+import com.thebiggestdata.ingestion.application.usecases.RunIngestionCycleUseCase;
+import com.thebiggestdata.ingestion.infrastructure.adapters.activemq.ActiveMQBookIngestedPublisher;
 import com.thebiggestdata.ingestion.infrastructure.adapters.activemq.ActiveMQIngestionControlConsumer;
+import com.thebiggestdata.ingestion.infrastructure.adapters.activemq.BookIngestedMessageMapper;
+import com.thebiggestdata.ingestion.infrastructure.adapters.activemq.IngestionControlMessageMapper;
+import com.thebiggestdata.ingestion.infrastructure.adapters.activemq.JmsMessageListener;
+import com.thebiggestdata.ingestion.infrastructure.adapters.activemq.JmsMessageSender;
+import com.thebiggestdata.ingestion.infrastructure.adapters.bookprovider.GutenbergBookParser;
+import com.thebiggestdata.ingestion.infrastructure.adapters.bookprovider.GutenbergBookProvider;
+import com.thebiggestdata.ingestion.infrastructure.adapters.bookprovider.GutenbergHttpClient;
+import com.thebiggestdata.ingestion.infrastructure.adapters.bookprovider.GutenbergRetryPolicy;
+import com.thebiggestdata.ingestion.infrastructure.adapters.bookprovider.GutenbergUrlResolver;
+import com.thebiggestdata.ingestion.infrastructure.adapters.filesystem.BookFileSerializer;
+import com.thebiggestdata.ingestion.infrastructure.adapters.filesystem.BookFileWriter;
+import com.thebiggestdata.ingestion.infrastructure.adapters.filesystem.BookPathResolver;
+import com.thebiggestdata.ingestion.infrastructure.adapters.filesystem.FilesystemBookStorage;
+import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastBookDownloadStatus;
+import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastBookIngestionGuard;
+import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastBookReplicator;
 import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastDatalake;
-import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastManager;
+import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastDownloadedBooks;
+import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastIndexedBooks;
+import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastIngestionCapacity;
+import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastPendingBooks;
+import com.thebiggestdata.ingestion.infrastructure.adapters.hazelcast.HazelcastReplicationWorker;
 import com.thebiggestdata.ingestion.infrastructure.adapters.scheduler.PeriodicScheduler;
-import com.thebiggestdata.ingestion.infrastructure.adapters.web.BookStatusService;
-import com.thebiggestdata.ingestion.infrastructure.adapters.web.ListBooksService;
-import com.thebiggestdata.ingestion.application.usecases.IngestionPauseController;
-import com.thebiggestdata.ingestion.infrastructure.adapters.filesystem.DateTimePathGenerator;
-import com.thebiggestdata.ingestion.infrastructure.ports.old.*;
+import com.thebiggestdata.ingestion.infrastructure.adapters.web.BookProviderController;
+import com.thebiggestdata.ingestion.infrastructure.config.HazelcastConfig;
+import com.thebiggestdata.ingestion.infrastructure.config.IngestionConfiguration;
+import com.thebiggestdata.ingestion.infrastructure.ports.BookDownloadStatus;
+import com.thebiggestdata.ingestion.infrastructure.ports.BookProvider;
+import com.thebiggestdata.ingestion.infrastructure.ports.BookStorage;
+import com.thebiggestdata.ingestion.infrastructure.ports.DownloadedBooks;
+import com.thebiggestdata.ingestion.infrastructure.ports.IngestionState;
+import com.thebiggestdata.ingestion.model.BookNotFoundException;
 import io.javalin.Javalin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.jms.ConnectionFactory;
+import org.apache.activemq.ActiveMQConnectionFactory;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class Main {
+public final class Main {
 
-    private static final Logger log = LoggerFactory.getLogger(Main.class);
+    private Main() {}
 
-    public static void main(String[] args) {
-        String datalakePath = args[0];
-        String brokerUrl = System.getenv().getOrDefault("BROKER_URL", "tcp://activemq:61616");
-        String clusterName = System.getenv().getOrDefault("HAZELCAST_CLUSTER_NAME", "SearchEngine");
-        int replicationFactor = Integer.parseInt(System.getenv().getOrDefault("REPLICATION_FACTOR", "1"));
-        int bufferFactor = Integer.parseInt(System.getenv().getOrDefault("INDEXING_BUFFER_FACTOR", "10"));
+    public static void main(String[] arguments) {
+        IngestionConfiguration configuration = IngestionConfiguration.load(arguments, System.getenv());
+        Gson gson = new Gson();
 
-        PathGenerator pathGenerator = new DateTimePathGenerator(datalakePath);
-        BookStorageDate storageDate = new BookStorageDate(pathGenerator);
+        HazelcastInstance hazelcast = new HazelcastConfig().start(configuration.hazelcastClusterName());
+        String nodeId = configuration.nodeId()
+                .orElseGet(() -> hazelcast.getCluster().getLocalMember().getUuid().toString());
 
-        BookProvider gutenbergProvider = new GutenbergBookProvider(new GutenbergFetch(), new GutenbergConnection(),
-                new GutenbergBookContentSeparator());
+        BookProvider provider = new GutenbergBookProvider(
+                new GutenbergUrlResolver(),
+                new GutenbergHttpClient(configuration.providerTimeout()),
+                new GutenbergRetryPolicy(
+                        configuration.providerRetries(),
+                        configuration.providerRetryDelay().toMillis()
+                ),
+                new GutenbergBookParser()
+        );
+        BookStorage storage = new FilesystemBookStorage(
+                new BookPathResolver(configuration.datalakeRoot()),
+                new BookFileSerializer(),
+                new BookFileWriter()
+        );
 
-        HazelcastManager hazelcastManager = new HazelcastManager(clusterName, replicationFactor, gutenbergProvider,
-                storageDate);
+        HazelcastDatalake datalake = new HazelcastDatalake(hazelcast);
+        BookDownloadStatus downloadStatus = new HazelcastBookDownloadStatus(hazelcast);
+        DownloadedBooks downloadedBooks = new HazelcastDownloadedBooks(hazelcast);
 
-        Datalake datalake = new HazelcastDatalake(hazelcastManager.getHazelcastInstance(), hazelcastManager.getHazelcastReplicationExecuter());
+        ConnectionFactory jmsFactory = new ActiveMQConnectionFactory(configuration.brokerUrl());
+        JmsMessageSender eventSender = new JmsMessageSender(jmsFactory);
+        JmsMessageListener controlListener = new JmsMessageListener(jmsFactory);
+        IngestionState ingestionState = new InMemoryIngestionState();
+        ActiveMQIngestionControlConsumer controlConsumer = new ActiveMQIngestionControlConsumer(
+                controlListener,
+                new IngestionControlMessageMapper(gson),
+                ingestionState
+        );
 
-        ActiveMQBookIngestedNotifier notifier = new ActiveMQBookIngestedNotifier(brokerUrl);
-        BookDownloadStatusStore statusStore = new BookDownloadLog(hazelcastManager.getHazelcastInstance(), "log");
+        IngestBookUseCase ingestBook = new IngestBookUseCase(
+                downloadStatus,
+                ingestionState,
+                provider,
+                new HazelcastBookIngestionGuard(hazelcast, nodeId, configuration.ingestionLease()),
+                storage,
+                datalake,
+                new HazelcastBookReplicator(
+                        hazelcast,
+                        nodeId,
+                        configuration.replicationFactor(),
+                        configuration.replicationTimeout(),
+                        configuration.replicationCheckInterval()
+                ),
+                new ActiveMQBookIngestedPublisher(
+                        eventSender,
+                        new BookIngestedMessageMapper(gson)
+                )
+        );
 
-        IngestionPauseController pauseController = new IngestionPauseController();
+        RunIngestionCycleUseCase runIngestionCycle = new RunIngestionCycleUseCase(
+                ingestionState,
+                new HazelcastIngestionCapacity(hazelcast, configuration.indexingBufferFactor()),
+                new HazelcastPendingBooks(
+                        hazelcast,
+                        configuration.pendingBookPollTimeout(),
+                        configuration.pendingBookMaxAttempts()
+                ),
+                new HazelcastIndexedBooks(hazelcast),
+                ingestBook
+        );
 
-        IngestBook ingestBookUseCase = new IngestBook(gutenbergProvider, storageDate, datalake, statusStore, notifier);
+        HazelcastReplicationWorker replicationWorker = new HazelcastReplicationWorker(
+                hazelcast,
+                nodeId,
+                datalake,
+                storage
+        );
+        PeriodicScheduler scheduler = new PeriodicScheduler(configuration.ingestionWorkers());
 
-        IngestionQueueRepository queueRepository = new HazelcastIngestionRepository(hazelcastManager.getHazelcastInstance());
+        BookProviderController controller = new BookProviderController(
+                ingestBook,
+                new ListDownloadedBooksUseCase(downloadedBooks),
+                new GetBookStatusUseCase(downloadStatus),
+                gson
+        );
+        Javalin application = httpApplication(controller, configuration.servicePort(), gson);
 
-        BookIngestionPeriodicExecutor periodicLogic = new BookIngestionPeriodicExecutor(ingestBookUseCase, pauseController,
-                queueRepository, bufferFactor);
+        replicationWorker.start();
+        controlConsumer.start("ingestion-control-" + nodeId.replace(':', '-'));
+        scheduler.schedule(
+                runIngestionCycle::execute,
+                0,
+                configuration.schedulerInterval().toMillis(),
+                TimeUnit.MILLISECONDS
+        );
 
-        BookListProvider listBooksService = new ListBooksService(statusStore);
-        BookStatusProvider bookStatusService = new BookStatusService(statusStore);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            scheduler.close();
+            replicationWorker.close();
+            eventSender.close();
+            controlListener.close();
+            application.stop();
+            hazelcast.shutdown();
+        }, "ingestion-shutdown"));
+    }
 
-        BookProviderController controller = new BookProviderController(ingestBookUseCase, listBooksService,bookStatusService);
-
-        ActiveMQIngestionControlConsumer controlConsumer = new ActiveMQIngestionControlConsumer(brokerUrl,
-                "ingestion-control-consumer-" + java.util.UUID.randomUUID() , pauseController);
-
-        PeriodicScheduler scheduler = new PeriodicScheduler();
-
-        try {
-            controlConsumer.start();
-        } catch (Exception e) {
-            log.error("Failed to start ActiveMQ consumer", e);
-        }
-
-        Javalin app = Javalin.create(config -> {
-            config.http.defaultContentType = "application/json";
-        }).start(7001);
-
-        app.post("/ingest/{book_id}", controller::ingestBook);
-        app.get("/ingest/status/{book_id}", controller::status);
-        app.get("/ingest/list", controller::listAllBooks);
-
-        scheduler.schedule(periodicLogic::execute, 0, 100, TimeUnit.MILLISECONDS);
+    private static Javalin httpApplication(BookProviderController controller, int port, Gson gson) {
+        Javalin application = Javalin.create(config ->
+                config.http.defaultContentType = "application/json"
+        );
+        application.exception(IllegalArgumentException.class, (exception, context) -> {
+            context.status(400);
+            context.result(gson.toJson(Map.of("error", exception.getMessage())));
+        });
+        application.exception(BookNotFoundException.class, (exception, context) -> {
+            context.status(404);
+            context.result(gson.toJson(Map.of(
+                    "bookId", exception.bookId(),
+                    "error", exception.getMessage()
+            )));
+        });
+        application.post("/ingest/{book_id}", controller::ingestBook);
+        application.get("/ingest/status/{book_id}", controller::status);
+        application.get("/ingest/list", controller::listAllBooks);
+        application.get("/health", context -> context.result("{\"status\":\"UP\"}"));
+        return application.start(port);
     }
 }

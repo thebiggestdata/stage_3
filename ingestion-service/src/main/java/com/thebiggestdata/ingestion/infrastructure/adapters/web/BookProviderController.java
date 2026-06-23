@@ -1,43 +1,56 @@
 package com.thebiggestdata.ingestion.infrastructure.adapters.web;
 
-import java.util.Map;
 import io.javalin.http.Context;
 
 import com.google.gson.Gson;
-
-import com.thebiggestdata.ingestion.application.usecases.IngestBook;
-import com.thebiggestdata.ingestion.infrastructure.ports.old.BookListProvider;
-import com.thebiggestdata.ingestion.infrastructure.ports.old.BookStatusProvider;
+import com.thebiggestdata.ingestion.application.usecases.GetBookStatusUseCase;
+import com.thebiggestdata.ingestion.application.usecases.IngestBookUseCase;
+import com.thebiggestdata.ingestion.application.usecases.ListDownloadedBooksUseCase;
 import com.thebiggestdata.ingestion.model.IngestionResult;
 
-public class BookProviderController {
-    private final IngestBook ingestBookUseCase;
+public final class BookProviderController {
 
-    private final BookListProvider listBooksService;
-    private final BookStatusProvider bookStatusService;
-    private static final Gson gson = new Gson();
+    private final IngestBookUseCase ingestBook;
+    private final ListDownloadedBooksUseCase listDownloadedBooks;
+    private final GetBookStatusUseCase getBookStatus;
+    private final Gson gson;
 
-
-    public BookProviderController(IngestBook ingestBookUseCase, BookListProvider listBooksService, BookStatusProvider bookStatusService) {
-        this.ingestBookUseCase = ingestBookUseCase;
-        this.listBooksService = listBooksService;
-        this.bookStatusService = bookStatusService;
+    public BookProviderController(
+            IngestBookUseCase ingestBook,
+            ListDownloadedBooksUseCase listDownloadedBooks,
+            GetBookStatusUseCase getBookStatus,
+            Gson gson
+    ) {
+        this.ingestBook = ingestBook;
+        this.listDownloadedBooks = listDownloadedBooks;
+        this.getBookStatus = getBookStatus;
+        this.gson = gson;
     }
 
     public void ingestBook(Context ctx) {
-        int bookId = Integer.parseInt(ctx.pathParam("book_id"));
-        IngestionResult result = ingestBookUseCase.execute(bookId);
+        int bookId = positiveBookId(ctx);
+        IngestionResult result = ingestBook.execute(bookId);
+        ctx.status(switch (result.status()) {
+            case IN_PROGRESS -> 202;
+            case PAUSED -> 503;
+            default -> 200;
+        });
         ctx.result(gson.toJson(result));
     }
 
     public void listAllBooks(Context ctx) {
-        Map<String, Object> result = listBooksService.getBookList();
-        ctx.result(gson.toJson(result));
+        ctx.result(gson.toJson(listDownloadedBooks.execute()));
     }
 
     public void status(Context ctx) {
-        int bookId = Integer.parseInt(ctx.pathParam("book_id"));
-        Map<String, Object> result = bookStatusService.getBookStatus(bookId);
-        ctx.result(gson.toJson(result));
+        ctx.result(gson.toJson(getBookStatus.execute(positiveBookId(ctx))));
+    }
+
+    private int positiveBookId(Context context) {
+        int bookId = Integer.parseInt(context.pathParam("book_id"));
+        if (bookId < 1) {
+            throw new IllegalArgumentException("book_id must be positive");
+        }
+        return bookId;
     }
 }

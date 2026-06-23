@@ -29,7 +29,7 @@ public record IndexingConfiguration(
                 positiveInt(environment, "INDEXING_CONSUMERS", 2),
                 positiveInt(environment, "ACTIVEMQ_PREFETCH", 1),
                 nonNegativeInt(environment, "ACTIVEMQ_MAX_REDELIVERIES", 50),
-                positiveInt(environment, "INDEX_WRITERS", 2),
+                positiveInt(environment, "INDEX_WRITERS", 4),
                 duration(environment, "INDEXING_CLAIM_LEASE_MS", 300_000),
                 duration(environment, "INDEXING_IN_PROGRESS_RETRY_TIMEOUT_MS", 600_000),
                 duration(environment, "INDEXING_IN_PROGRESS_RETRY_DELAY_MS", 1_000),

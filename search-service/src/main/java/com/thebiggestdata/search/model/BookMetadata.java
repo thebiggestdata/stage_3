@@ -1,5 +1,7 @@
 package com.thebiggestdata.search.model;
 
+import java.util.Locale;
+
 public record BookMetadata(String title, String author, String language, Integer year) {
 
 	public boolean matches(String authorFilter, String languageFilter, Integer yearFilter) {
@@ -11,6 +13,6 @@ public record BookMetadata(String title, String author, String language, Integer
 
 	private boolean containsIgnoreCase(String source, String target) {
 		return source != null && target != null &&
-				source.toLowerCase().contains(target.toLowerCase());
+				source.toLowerCase(Locale.ROOT).contains(target.toLowerCase(Locale.ROOT));
 	}
 }

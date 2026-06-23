@@ -1,7 +1,10 @@
 package com.thebiggestdata.search.infrastructure.ports;
 
-import java.util.Set;
+import com.thebiggestdata.search.model.IndexGeneration;
+
+import java.util.Map;
 
 public interface IndexStore {
-	Set<String> getDocuments(String term);
+
+	Map<Integer, Integer> find(IndexGeneration generation, String term);
 }

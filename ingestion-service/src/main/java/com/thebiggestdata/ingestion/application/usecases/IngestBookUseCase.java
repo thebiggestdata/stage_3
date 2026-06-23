@@ -1,69 +1,81 @@
 package com.thebiggestdata.ingestion.application.usecases;
 
-import com.thebiggestdata.ingestion.infrastructure.ports.*;
-import com.thebiggestdata.ingestion.model.BookContent;
+import com.thebiggestdata.ingestion.infrastructure.ports.BookDownloadStatus;
+import com.thebiggestdata.ingestion.infrastructure.ports.BookProvider;
+import com.thebiggestdata.ingestion.infrastructure.ports.BookStorage;
+import com.thebiggestdata.ingestion.infrastructure.ports.Datalake;
+import com.thebiggestdata.ingestion.infrastructure.ports.BookReplicator;
+import com.thebiggestdata.ingestion.infrastructure.ports.BookIngestedPublisher;
+import com.thebiggestdata.ingestion.infrastructure.ports.BookIngestionGuard;
+import com.thebiggestdata.ingestion.infrastructure.ports.IngestionState;
 import com.thebiggestdata.ingestion.model.BookIngestedEvent;
 import com.thebiggestdata.ingestion.model.IngestionResult;
-import com.thebiggestdata.ingestion.model.ReplicationResult;
+import com.thebiggestdata.ingestion.model.Book;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.nio.file.Path;
+public class IngestBookUseCase {
 
-public class IngestBookUseCase implements IngestBookPort {
+    private final BookDownloadStatus downloadStatus;
+    private final IngestionState ingestionState;
+    private final BookIngestionGuard ingestionGuard;
+    private final BookProvider bookProvider;
+    private final BookStorage bookStorage;
+    private final Datalake datalake;
+    private final BookReplicator bookReplicator;
+    private final BookIngestedPublisher publisher;
 
-    private static final Logger log = LoggerFactory.getLogger(IngestBookUseCase.class);
-
-    private final BookProviderPort bookProvider;
-    private final BookStoragePort bookStorage;
-    private final DatalakePort datalake;
-    private final BookDownloadStatusPort downloadStatus;
-    private final BookIngestedNotifierPort notifier;
-    private final int replicationFactor;
-
-    public IngestBookUseCase(BookProviderPort bookProvider, BookStoragePort bookStorage, DatalakePort datalake,
-                             BookDownloadStatusPort downloadStatus, BookIngestedNotifierPort notifier,
-                             int replicationFactor) {
-
+    public IngestBookUseCase(
+            BookDownloadStatus downloadStatus,
+            IngestionState ingestionState,
+            BookProvider bookProvider,
+            BookIngestionGuard ingestionGuard,
+            BookStorage bookStorage,
+            Datalake datalake,
+            BookReplicator bookReplicator,
+            BookIngestedPublisher publisher
+    ) {
+        this.downloadStatus = downloadStatus;
+        this.ingestionState = ingestionState;
+        this.ingestionGuard = ingestionGuard;
         this.bookProvider = bookProvider;
         this.bookStorage = bookStorage;
         this.datalake = datalake;
-        this.downloadStatus = downloadStatus;
-        this.notifier = notifier;
-        this.replicationFactor = replicationFactor;
-
+        this.bookReplicator = bookReplicator;
+        this.publisher = publisher;
     }
 
-    @Override
-    public IngestionResult ingest(int bookId) {
-        log.info("Start ingestion bookId={}", bookId);
+    public IngestionResult execute(int bookId) {
+        if (downloadStatus.isDownloaded(bookId)) {
+            return IngestionResult.alreadyIngested(bookId);
+        }
+
+        if (ingestionState.isPaused()) {
+            return IngestionResult.paused(bookId);
+        }
+
+        if (!ingestionGuard.tryAcquire(bookId)) {
+            return IngestionResult.inProgress(bookId);
+        }
+
         try {
             if (downloadStatus.isDownloaded(bookId)) {
-                log.warn("Book {} already downloaded, skipping.", bookId);
                 return IngestionResult.alreadyIngested(bookId);
             }
 
-            BookContent content = bookProvider.getBookContent(bookId);
-            Path savedPath = bookStorage.save(bookId, content);
-            datalake.save(bookId, content);
-
-            ReplicationResult replication = datalake.replicate(bookId, replicationFactor);
-            if (!replication.isQuorumReached()) {
-                log.error("Quorum not reached for book {}: {}", bookId, replication.failedPeers());
-                return IngestionResult.failed(bookId, "Replication quorum not reached");
+            if (ingestionState.isPaused()) {
+                return IngestionResult.paused(bookId);
             }
 
+            Book book = bookProvider.fetch(bookId);
+
+            bookStorage.save(book);
+            datalake.save(book);
+            bookReplicator.replicate(book);
+            publisher.publish(new BookIngestedEvent(bookId));
             downloadStatus.markAsDownloaded(bookId);
 
-            BookIngestedEvent bookIngestedEvent = new BookIngestedEvent(bookId);
-
-            notifier.notify(bookIngestedEvent);
-
-            return IngestionResult.ingested(bookId, savedPath.toString());
-
-        } catch (Exception e) {
-            log.error("Error ingesting bookId {}: {}", bookId, e.getMessage());
-            return IngestionResult.failed(bookId, e.getMessage());
+            return IngestionResult.ingested(bookId);
+        } finally {
+            ingestionGuard.release(bookId);
         }
     }
 }

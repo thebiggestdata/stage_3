@@ -1,22 +1,28 @@
 package com.thebiggestdata.search.infrastructure.adapters.hazelcast;
 
-import com.thebiggestdata.search.infrastructure.ports.MetadataStore;
-import com.thebiggestdata.search.model.BookMetadata;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.thebiggestdata.search.infrastructure.ports.MetadataStore;
+import com.thebiggestdata.search.model.BookMetadata;
+import com.thebiggestdata.search.model.IndexGeneration;
 
 import java.util.Map;
 import java.util.Set;
 
-public class HazelcastMetadataStore implements MetadataStore {
-	private final IMap<Integer, BookMetadata> metadataMap;
+public final class HazelcastMetadataStore implements MetadataStore {
 
-	public HazelcastMetadataStore(HazelcastInstance hazelcastInstance) {
-		this.metadataMap = hazelcastInstance.getMap("bookMetadata");
-	}
+    private final HazelcastInstance hazelcast;
 
-	@Override
-	public Map<Integer, BookMetadata> getMetadata(Set<Integer> bookIds) {
-		return metadataMap.getAll(bookIds);
-	}
+    public HazelcastMetadataStore(HazelcastInstance hazelcast) {
+        this.hazelcast = hazelcast;
+    }
+
+    @Override
+    public Map<Integer, BookMetadata> findAll(IndexGeneration generation, Set<Integer> bookIds) {
+        IMap<Integer, BookMetadata> metadata = hazelcast.getMap(HazelcastNames.generated(
+                HazelcastNames.BOOK_METADATA,
+                generation.value()
+        ));
+        return metadata.getAll(bookIds);
+    }
 }

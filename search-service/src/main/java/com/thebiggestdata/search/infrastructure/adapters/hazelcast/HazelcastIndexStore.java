@@ -1,32 +1,49 @@
 package com.thebiggestdata.search.infrastructure.adapters.hazelcast;
 
-import com.thebiggestdata.search.infrastructure.ports.IndexStore;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import com.hazelcast.multimap.MultiMap;
+import com.thebiggestdata.search.infrastructure.ports.IndexStore;
+import com.thebiggestdata.search.model.IndexGeneration;
 
-public class HazelcastIndexStore implements IndexStore {
-	private static final Logger log = LoggerFactory.getLogger(HazelcastIndexStore.class);
-	private final IMap<String, Set<String>> invertedIndex;
+import java.util.HashMap;
+import java.util.Map;
 
-	public HazelcastIndexStore(HazelcastInstance hazelcastInstance) {
-		this.invertedIndex = hazelcastInstance.getMap("inverted-index");
-		log.info("Connected to Hazelcast inverted index");
-	}
+public final class HazelcastIndexStore implements IndexStore {
 
-	@Override
-	public Set<String> getDocuments(String term) {
-		Collection<String> docs = invertedIndex.get(term);
+    private final HazelcastInstance hazelcast;
 
-		if (docs == null) {
-			return Collections.emptySet();
-		}
+    public HazelcastIndexStore(HazelcastInstance hazelcast) {
+        this.hazelcast = hazelcast;
+    }
 
-		return new HashSet<>(docs);
-	}
+    @Override
+    public Map<Integer, Integer> find(IndexGeneration generation, String term) {
+        MultiMap<String, String> index = hazelcast.getMultiMap(HazelcastNames.generated(
+                HazelcastNames.INVERTED_INDEX,
+                generation.value()
+        ));
+        Map<Integer, Integer> postings = new HashMap<>();
+        for (String encodedPosting : index.get(term)) {
+            Posting posting = decode(encodedPosting);
+            postings.merge(posting.bookId(), posting.frequency(), Math::max);
+        }
+        return Map.copyOf(postings);
+    }
+
+    private Posting decode(String encodedPosting) {
+        try {
+            int separator = encodedPosting.indexOf(':');
+            if (separator < 1 || separator == encodedPosting.length() - 1) {
+                throw new IllegalArgumentException("Missing posting separator");
+            }
+            return new Posting(
+                    Integer.parseInt(encodedPosting.substring(0, separator)),
+                    Math.toIntExact(Long.parseLong(encodedPosting.substring(separator + 1)))
+            );
+        } catch (RuntimeException e) {
+            throw new HazelcastAdapterException("Invalid index posting: " + encodedPosting, e);
+        }
+    }
+
+    private record Posting(int bookId, int frequency) {}
 }

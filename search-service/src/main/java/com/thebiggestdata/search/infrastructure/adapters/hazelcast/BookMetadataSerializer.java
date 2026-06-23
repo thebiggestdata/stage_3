@@ -5,7 +5,7 @@ import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
-public class BookMetadataSerializer implements CompactSerializer<BookMetadata> {
+public final class BookMetadataSerializer implements CompactSerializer<BookMetadata> {
 
 	@Override
 	public BookMetadata read(CompactReader reader) {

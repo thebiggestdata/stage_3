@@ -5,19 +5,17 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.thebiggestdata.ingestion.model.BookContent;
 
-public class BookContentSerializer implements CompactSerializer<BookContent> {
+public final class BookContentSerializer implements CompactSerializer<BookContent> {
 
     @Override
     public BookContent read(CompactReader reader) {
-        String header = reader.readString("header");
-        String body = reader.readString("body");
-        return new BookContent(header, body);
+        return new BookContent(reader.readString("header"), reader.readString("body"));
     }
 
     @Override
-    public void write(CompactWriter writer, BookContent bookContent) {
-        writer.writeString("header", bookContent.header());
-        writer.writeString("body", bookContent.body());
+    public void write(CompactWriter writer, BookContent content) {
+        writer.writeString("header", content.header());
+        writer.writeString("body", content.body());
     }
 
     @Override

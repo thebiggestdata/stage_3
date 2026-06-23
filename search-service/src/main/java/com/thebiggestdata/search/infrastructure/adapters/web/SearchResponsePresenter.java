@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SearchResponsePresenter {
+public final class SearchResponsePresenter {
 
 	public Map<String, Object> formatSuccess(SearchCriteria criteria, List<SearchResult> results) {
 		Map<String, Object> response = new LinkedHashMap<>();
@@ -34,6 +34,7 @@ public class SearchResponsePresenter {
 		if (c.author() != null) filters.put("author", c.author());
 		if (c.language() != null) filters.put("language", c.language());
 		if (c.year() != null) filters.put("year", c.year());
+		filters.put("mode", c.mode() == SearchCriteria.SearchMode.ALL_TERMS ? "all" : "any");
 		return filters;
 	}
 

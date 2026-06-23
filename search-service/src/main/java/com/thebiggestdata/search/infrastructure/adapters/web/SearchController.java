@@ -1,50 +1,39 @@
 package com.thebiggestdata.search.infrastructure.adapters.web;
 
 import com.thebiggestdata.search.infrastructure.ports.BookSearch;
+import com.thebiggestdata.search.infrastructure.ports.HealthCheck;
 import com.thebiggestdata.search.model.SearchCriteria;
 import com.thebiggestdata.search.model.SearchResult;
 import io.javalin.http.Context;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
 
-public class SearchController {
-	private static final Logger log = Logger.getLogger(SearchController.class.getName());
+public final class SearchController {
 
-	private final BookSearch bookSearch;
-	private final SearchRequestMapper mapper;
-	private final SearchResponsePresenter presenter;
+    private final BookSearch searchBooks;
+    private final HealthCheck health;
+    private final SearchRequestMapper requestMapper;
+    private final SearchResponsePresenter presenter;
 
-	public SearchController(BookSearch bookSearch) {
-		this.bookSearch = bookSearch;
-		this.mapper = new SearchRequestMapper();
-		this.presenter = new SearchResponsePresenter();
-	}
+    public SearchController(
+            BookSearch searchBooks,
+            HealthCheck health,
+            SearchRequestMapper requestMapper,
+            SearchResponsePresenter presenter
+    ) {
+        this.searchBooks = searchBooks;
+        this.health = health;
+        this.requestMapper = requestMapper;
+        this.presenter = presenter;
+    }
 
-	public void search(Context ctx) {
-		try {
-			SearchCriteria criteria = mapper.map(ctx);
-			log.info("Executing search for: " + criteria.query());
+    public void search(Context context) {
+        SearchCriteria criteria = requestMapper.map(context);
+        List<SearchResult> results = searchBooks.execute(criteria);
+        context.json(presenter.formatSuccess(criteria, results));
+    }
 
-			List<SearchResult> results = bookSearch.execute(criteria);
-
-			Map<String, Object> jsonResponse = presenter.formatSuccess(criteria, results);
-
-			ctx.json(jsonResponse);
-		} catch (IllegalArgumentException e) {
-			ctx.status(400).json(presenter.formatError(e.getMessage()));
-		} catch (Exception e) {
-			log.severe("Error: " + e.getMessage());
-			ctx.status(500).json(presenter.formatError(e.getMessage()));
-		}
-	}
-
-	public void health(Context ctx) {
-		Map<String, Object> response = new LinkedHashMap<>();
-		response.put("status", "healthy");
-		response.put("service", "execute");
-		ctx.json(response);
-	}
+    public void health(Context context) {
+        context.json(health.check());
+    }
 }

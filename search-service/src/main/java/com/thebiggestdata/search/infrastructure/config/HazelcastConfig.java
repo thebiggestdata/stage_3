@@ -1,77 +1,81 @@
 package com.thebiggestdata.search.infrastructure.config;
 
-import com.hazelcast.config.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.thebiggestdata.search.infrastructure.adapters.hazelcast.BookMetadataSerializer;
+import com.thebiggestdata.search.infrastructure.adapters.hazelcast.HazelcastNames;
 
-public class HazelcastConfig {
+public final class HazelcastConfig {
 
-	public static final String INDEX_MAP = "inverted-index";
-	public static final String METADATA_MAP = "bookMetadata";
-	public static final String DATALAKE_MAP = "datalake";
+    public HazelcastInstance start(String clusterName) {
+        Config config = new Config();
+        config.setClusterName(clusterName);
+        config.getMemberAttributeConfig().setAttribute("role", "search");
+        String nodeId = stableNodeId();
+        if (nodeId != null && !nodeId.isBlank()) {
+            config.getMemberAttributeConfig().setAttribute("nodeId", nodeId);
+        }
+        config.getSerializationConfig()
+                .getCompactSerializationConfig()
+                .addSerializer(new BookMetadataSerializer());
 
-	public HazelcastInstance initHazelcast(String clusterName) {
+        configureDataStructures(config);
+        configureNetwork(config);
+        configureDiscovery(config);
+        return Hazelcast.newHazelcastInstance(config);
+    }
 
-		Config config = new Config();
-		config.setClusterName(clusterName);
+    private void configureDataStructures(Config config) {
+        int backups = environmentInt("HAZELCAST_BACKUP_COUNT", 1);
+        config.addMultiMapConfig(new MultiMapConfig(HazelcastNames.INVERTED_INDEX + ":*")
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET)
+                .setBackupCount(backups)
+                .setAsyncBackupCount(0));
+        config.addMapConfig(new MapConfig(HazelcastNames.BOOK_METADATA + ":*").setBackupCount(backups));
+        config.addMapConfig(new MapConfig(HazelcastNames.INDEX_GENERATIONS).setBackupCount(backups));
+        config.addSetConfig(new SetConfig(HazelcastNames.INDEXED_BOOKS + ":*").setBackupCount(backups));
+    }
 
-		config.getSerializationConfig()
-				.getCompactSerializationConfig()
-				.addSerializer(new BookMetadataSerializer());
+    private void configureNetwork(Config config) {
+        NetworkConfig network = config.getNetworkConfig();
+        network.setPort(environmentInt("HZ_PORT", 5703));
+        network.setPortAutoIncrement(false);
+        config.setProperty("hazelcast.wait.seconds.before.join", "0");
+        String publicAddress = System.getenv("HZ_PUBLIC_ADDRESS");
+        if (publicAddress != null && !publicAddress.isBlank()) {
+            network.setPublicAddress(publicAddress);
+        }
+    }
 
-		setMapConfig(config);
-		setNetworkConfig(config);
-		setJoinConfig(config);
+    private void configureDiscovery(Config config) {
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getAutoDetectionConfig().setEnabled(false);
+        String members = System.getenv("HZ_MEMBERS");
+        if (members == null || members.isBlank()) {
+            join.getTcpIpConfig().setEnabled(false);
+            join.getMulticastConfig().setEnabled(true);
+            return;
+        }
+        join.getMulticastConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(true);
+        for (String member : members.split(",")) {
+            join.getTcpIpConfig().addMember(member.trim());
+        }
+    }
 
-		return Hazelcast.newHazelcastInstance(config);
-	}
+    private int environmentInt(String name, int defaultValue) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? defaultValue : Integer.parseInt(value);
+    }
 
-	private void setMapConfig(Config config) {
-		NearCacheConfig nearCacheConfig = new NearCacheConfig()
-				.setName("inverted-index-near-cache")
-				.setInvalidateOnChange(true);
-
-		MapConfig invertedIndexReplicaConfig = new MapConfig(INDEX_MAP)
-				.setBackupCount(2)
-				.setAsyncBackupCount(1)
-				.setNearCacheConfig(nearCacheConfig);
-		config.addMapConfig(invertedIndexReplicaConfig);
-
-		MapConfig bookMetadataReplicaConfig = new MapConfig(METADATA_MAP)
-				.setBackupCount(2)
-				.setAsyncBackupCount(1);
-		config.addMapConfig(bookMetadataReplicaConfig);
-
-		MapConfig datalakeReplicaConfig = new MapConfig(DATALAKE_MAP)
-				.setBackupCount(2)
-				.setAsyncBackupCount(1);
-		config.addMapConfig(datalakeReplicaConfig);
-	}
-
-	private void setNetworkConfig(Config config) {
-		NetworkConfig networkConfig = config.getNetworkConfig();
-		networkConfig.setPort(Integer.parseInt(System.getenv("HZ_PORT")));
-		networkConfig.setPortAutoIncrement(false);
-		config.setProperty("hazelcast.wait.seconds.before.join", "0");
-
-		String publicAddr = System.getenv("HZ_PUBLIC_ADDRESS");
-		if (publicAddr != null && !publicAddr.isBlank()) {
-			networkConfig.setPublicAddress(publicAddr);
-		}
-	}
-
-	private void setJoinConfig(Config config) {
-		JoinConfig join = config.getNetworkConfig().getJoin();
-		join.getMulticastConfig().setEnabled(false);
-		join.getAutoDetectionConfig().setEnabled(false);
-
-		String members = System.getenv("HZ_MEMBERS");
-		if (members != null && !members.isBlank()) {
-			join.getTcpIpConfig().setEnabled(true);
-			for (String m : members.split(",")) {
-				join.getTcpIpConfig().addMember(m.trim());
-			}
-		}
-	}
+    private String stableNodeId() {
+        String nodeId = System.getenv("HZ_NODE_ID");
+        return nodeId == null || nodeId.isBlank() ? System.getenv("HZ_PUBLIC_ADDRESS") : nodeId;
+    }
 }

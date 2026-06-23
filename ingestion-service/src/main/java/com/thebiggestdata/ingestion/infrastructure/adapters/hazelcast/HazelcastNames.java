@@ -18,4 +18,8 @@ public final class HazelcastNames {
     public static final String REPLICATED_NODES = "replicatedNodesMap";
 
     private HazelcastNames() {}
+
+    public static String replicationQueueFor(String nodeId) {
+        return REPLICATION_QUEUE + ":" + nodeId;
+    }
 }

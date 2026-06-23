@@ -34,8 +34,8 @@ public final class HazelcastReplicationWorker implements AutoCloseable {
         this.localNodeId = localNodeId;
         this.datalake = datalake;
         this.storage = storage;
-        this.queue = hazelcast.getQueue(HazelcastNames.REPLICATION_QUEUE);
         this.replicaRegistry = new HazelcastReplicaRegistry(hazelcast);
+        this.queue = hazelcast.getQueue(HazelcastNames.replicationQueueFor(localNodeId));
         this.executor = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "book-replication-worker");
             thread.setDaemon(true);
@@ -71,14 +71,17 @@ public final class HazelcastReplicationWorker implements AutoCloseable {
 
     private void replicate(int bookId) throws InterruptedException {
         if (replicaRegistry.contains(bookId, localNodeId)) {
-            queue.put(bookId);
-            TimeUnit.MILLISECONDS.sleep(200);
+            log.debug("Replica already stored locally; skipping bookId={} nodeId={}", bookId, localNodeId);
             return;
         }
 
+        String sourceNodeId = replicaRegistry.nodesFor(bookId).stream()
+                .filter(nodeId -> !nodeId.equals(localNodeId))
+                .findFirst()
+                .orElse("unknown");
         BookContent content = datalake.get(bookId);
         storage.save(new Book(bookId, content));
         replicaRegistry.register(bookId, localNodeId);
-        log.info("REPLICA_STORED bookId={} nodeId={}", bookId, localNodeId);
+        log.info("REPLICA_STORED bookId={} source={} target={}", bookId, sourceNodeId, localNodeId);
     }
 }

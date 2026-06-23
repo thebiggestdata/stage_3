@@ -11,6 +11,8 @@ import java.util.Set;
 final class HazelcastReplicaRegistry {
 
     private static final String NODE_ID = "nodeId";
+    private static final String ROLE = "role";
+    private static final String INGESTION = "ingestion";
 
     private final HazelcastInstance hazelcast;
     private final IMap<Integer, Set<String>> replicas;
@@ -37,13 +39,37 @@ final class HazelcastReplicaRegistry {
     }
 
     List<String> nodesFor(int bookId) {
-        Set<String> activeNodeIds = hazelcast.getCluster().getMembers().stream()
-                .flatMap(member -> nodeIds(member).stream())
-                .collect(java.util.stream.Collectors.toSet());
+        Set<String> activeNodeIds = activeNodeIds();
         return replicas.getOrDefault(bookId, Set.of()).stream()
                 .filter(activeNodeIds::contains)
                 .sorted()
                 .toList();
+    }
+
+    List<String> activeIngestionNodeIds() {
+        return hazelcast.getCluster().getMembers().stream()
+                .filter(this::isIngestion)
+                .map(this::stableNodeId)
+                .sorted()
+                .toList();
+    }
+
+    private Set<String> activeNodeIds() {
+        return hazelcast.getCluster().getMembers().stream()
+                .flatMap(member -> nodeIds(member).stream())
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
+    private boolean isIngestion(Member member) {
+        return INGESTION.equals(member.getAttribute(ROLE));
+    }
+
+    private String stableNodeId(Member member) {
+        String configuredNodeId = member.getAttribute(NODE_ID);
+        if (configuredNodeId == null || configuredNodeId.isBlank()) {
+            return member.getUuid().toString();
+        }
+        return configuredNodeId;
     }
 
     private Set<String> nodeIds(Member member) {

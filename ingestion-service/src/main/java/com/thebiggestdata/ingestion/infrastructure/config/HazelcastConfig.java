@@ -53,7 +53,7 @@ public final class HazelcastConfig {
                 .setBackupCount(backupCount)
                 .setAsyncBackupCount(0));
         config.addQueueConfig(new QueueConfig(HazelcastNames.PENDING_BOOKS).setBackupCount(backupCount));
-        config.addQueueConfig(new QueueConfig(HazelcastNames.REPLICATION_QUEUE).setBackupCount(backupCount));
+        config.addQueueConfig(new QueueConfig(HazelcastNames.REPLICATION_QUEUE + ":*").setBackupCount(backupCount));
         config.addSetConfig(new SetConfig(HazelcastNames.DOWNLOADED_BOOKS).setBackupCount(backupCount));
         config.addSetConfig(new SetConfig(HazelcastNames.INDEXED_BOOKS + ":*").setBackupCount(backupCount));
     }

@@ -1,55 +1,27 @@
 package com.thebiggestdata.ingestion.infrastructure.adapters.activemq;
 
-import com.google.gson.Gson;
-import com.thebiggestdata.ingestion.application.usecases.IngestionPauseController;
-import com.thebiggestdata.ingestion.infrastructure.ports.old.IngestionControlConsumer;
-import com.thebiggestdata.ingestion.model.IngestionStateEvent;
-import jakarta.jms.*;
-import org.apache.activemq.ActiveMQConnectionFactory;
+import com.thebiggestdata.ingestion.infrastructure.ports.IngestionState;
 
-public class ActiveMQIngestionControlConsumer implements IngestionControlConsumer {
+public final class ActiveMQIngestionControlConsumer {
 
-    private static final String TOPIC_NAME = "ingestion.control";
+    private static final String TOPIC = "ingestion.control";
 
-    private final String brokerUrl;
-    private final Gson gson = new Gson();
-    private final String consumerId;
-    private final IngestionPauseController pauseController;
+    private final JmsMessageListener listener;
+    private final IngestionControlMessageMapper mapper;
+    private final IngestionState ingestionState;
 
-    public ActiveMQIngestionControlConsumer(String brokerUrl, String consumerId, IngestionPauseController pauseController) {
-        this.brokerUrl = brokerUrl;
-        this.consumerId = consumerId;
-        this.pauseController = pauseController;
+    public ActiveMQIngestionControlConsumer(JmsMessageListener listener, IngestionControlMessageMapper mapper, IngestionState ingestionState) {
+        this.listener = listener;
+        this.mapper = mapper;
+        this.ingestionState = ingestionState;
     }
 
-    @Override
-    public void start() throws JMSException {
-        ConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
-        Connection connection = factory.createConnection();
-        connection.setClientID(consumerId);
-        connection.start();
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic topic = session.createTopic(TOPIC_NAME);
-        MessageConsumer consumer = session.createDurableConsumer(topic, consumerId);
-        consumer.setMessageListener(this::onMessage);
-    }
-
-    @Override
-    public void onMessage(Message message) {
-        try {
-            if (!(message instanceof TextMessage)) return;
-
-            String json = ((TextMessage) message).getText();
-            IngestionStateEvent event = gson.fromJson(json, IngestionStateEvent.class);
-
-switch (event.action()) {
-                case PAUSED -> pauseController.pause();
-                case RESUMED -> pauseController.resume();
+    public void start(String consumerId) {
+        listener.listenToDurableTopic(TOPIC, consumerId, message -> {
+            switch (mapper.toEvent(message).action()) {
+                case PAUSED -> ingestionState.pause();
+                case RESUMED -> ingestionState.resume();
             }
-
-        } catch (JMSException e) {
-            throw new RuntimeException(e);
-        }
+        });
     }
 }

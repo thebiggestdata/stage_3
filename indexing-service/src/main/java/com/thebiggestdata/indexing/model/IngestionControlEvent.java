@@ -2,14 +2,14 @@ package com.thebiggestdata.indexing.model;
 
 import java.time.Instant;
 
-public record IngestionControlEvent(Type type, String ts, String event) {
+public record IngestionControlEvent(Type action, String event, String timestamp) {
 
     public enum Type {
-        INGESTION_PAUSE,
-        INGESTION_RESUME
+        PAUSED,
+        RESUMED
     }
 
     public IngestionControlEvent(Type type) {
-        this(type, Instant.now().toString(), "ingestion.control");
+        this(type, "ingestion.control", Instant.now().toString());
     }
 }

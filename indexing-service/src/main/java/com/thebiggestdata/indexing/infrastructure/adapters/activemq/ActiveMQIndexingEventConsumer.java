@@ -84,7 +84,7 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
         try (Connection connection = connectionFactory.createConnection()) {
             activeConnections.add(connection);
             connection.start();
-            try (Session session = connection.createSession(true, Session.SESSION_TRANSACTED)) {
+            try (Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE)) {
                 Queue queue = session.createQueue(QUEUE);
                 try (MessageConsumer consumer = session.createConsumer(queue)) {
                     log.info("INDEXING_CONSUMER_STARTED queue={} nodeId={} worker={}",
@@ -124,7 +124,7 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
                     message.getJMSRedelivered()
             );
             handler.accept(event);
-            session.commit();
+            message.acknowledge();
         } catch (RuntimeException e) {
             log.error(
                     "INDEXING_EVENT_FAILED bookId={} nodeId={} worker={} reason={}; event will be redelivered",
@@ -134,7 +134,7 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
                     e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage(),
                     e
             );
-            session.rollback();
+            session.recover();
         }
     }
 

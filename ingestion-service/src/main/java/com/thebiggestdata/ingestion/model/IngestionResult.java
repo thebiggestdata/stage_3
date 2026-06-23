@@ -1,21 +1,28 @@
 package com.thebiggestdata.ingestion.model;
 
-public record IngestionResult(int bookId, Status status, String path, String errorMessage) {
+public record IngestionResult(
+        int bookId,
+        Status status) {
     public enum Status {
         INGESTED,
         ALREADY_INGESTED,
-        FAILED,
+        IN_PROGRESS,
+        PAUSED
     }
 
-    public static IngestionResult ingested(int bookId, String path) {
-        return new IngestionResult(bookId, Status.INGESTED, path, null);
+    public static IngestionResult ingested(int bookId) {
+        return new IngestionResult(bookId, Status.INGESTED);
     }
 
     public static IngestionResult alreadyIngested(int bookId) {
-        return new IngestionResult(bookId, Status.ALREADY_INGESTED, null, null);
+        return new IngestionResult(bookId, Status.ALREADY_INGESTED);
     }
 
-    public static IngestionResult failed(int bookId, String message) {
-        return new IngestionResult(bookId, Status.FAILED, null, message);
+    public static IngestionResult inProgress(int bookId) {
+        return new IngestionResult(bookId, Status.IN_PROGRESS);
+    }
+
+    public static IngestionResult paused(int bookId) {
+        return new IngestionResult(bookId, Status.PAUSED);
     }
 }

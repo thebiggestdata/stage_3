@@ -6,8 +6,10 @@ import com.thebiggestdata.indexing.infrastructure.ports.InvertedIndex;
 import com.thebiggestdata.indexing.model.IndexGeneration;
 import com.thebiggestdata.indexing.model.IndexedTerm;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -18,12 +20,14 @@ public final class HazelcastInvertedIndex implements InvertedIndex, AutoCloseabl
 
     private final HazelcastInstance hazelcast;
     private final ExecutorService writerPool;
+    private final int concurrentWriters;
 
     public HazelcastInvertedIndex(HazelcastInstance hazelcast, int concurrentWriters) {
         if (concurrentWriters < 1) {
             throw new IllegalArgumentException("concurrentWriters must be positive");
         }
         this.hazelcast = hazelcast;
+        this.concurrentWriters = concurrentWriters;
         this.writerPool = Executors.newFixedThreadPool(concurrentWriters, runnable -> {
             Thread thread = new Thread(runnable, "inverted-index-writer");
             thread.setDaemon(true);
@@ -34,8 +38,13 @@ public final class HazelcastInvertedIndex implements InvertedIndex, AutoCloseabl
     @Override
     public void addAll(IndexGeneration generation, List<IndexedTerm> terms) {
         IMap<String, Set<String>> index = index(generation);
-        CompletableFuture<?>[] writes = terms.stream()
-                .map(term -> CompletableFuture.runAsync(() -> add(index, term), writerPool))
+        List<Map.Entry<String, Set<String>>> postings = postingsByTerm(terms).entrySet().stream().toList();
+        int writers = Math.min(concurrentWriters, postings.size());
+        CompletableFuture<?>[] writes = java.util.stream.IntStream.range(0, writers)
+                .mapToObj(worker -> CompletableFuture.runAsync(
+                        () -> addBatch(index, postings, worker, writers),
+                        writerPool
+                ))
                 .toArray(CompletableFuture[]::new);
         try {
             CompletableFuture.allOf(writes).join();
@@ -44,14 +53,41 @@ public final class HazelcastInvertedIndex implements InvertedIndex, AutoCloseabl
         }
     }
 
-    private void add(IMap<String, Set<String>> index, IndexedTerm term) {
-        index.lock(term.term());
+    private Map<String, Set<String>> postingsByTerm(List<IndexedTerm> terms) {
+        Map<String, Set<String>> postings = new HashMap<>();
+        for (IndexedTerm term : terms) {
+            postings.computeIfAbsent(term.term(), ignored -> new HashSet<>())
+                    .add(encodePosting(term));
+        }
+        return postings;
+    }
+
+    private void addBatch(
+            IMap<String, Set<String>> index,
+            List<Map.Entry<String, Set<String>>> postings,
+            int worker,
+            int workers
+    ) {
+        for (int position = worker; position < postings.size(); position += workers) {
+            Map.Entry<String, Set<String>> entry = postings.get(position);
+            add(index, entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void add(IMap<String, Set<String>> index, String term, Set<String> newPostings) {
+        Set<String> previous = index.putIfAbsent(term, Set.copyOf(newPostings));
+        if (previous == null) {
+            return;
+        }
+
+        index.lock(term);
         try {
-            Set<String> postings = new HashSet<>(index.getOrDefault(term.term(), Set.of()));
-            postings.add(encodePosting(term));
-            index.put(term.term(), postings);
+            Set<String> merged = new HashSet<>(index.getOrDefault(term, Set.of()));
+            if (merged.addAll(newPostings)) {
+                index.put(term, merged);
+            }
         } finally {
-            index.unlock(term.term());
+            index.unlock(term);
         }
     }
 

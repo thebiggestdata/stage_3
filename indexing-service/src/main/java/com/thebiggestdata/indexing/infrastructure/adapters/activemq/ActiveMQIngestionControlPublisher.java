@@ -1,46 +1,32 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.activemq;
 
 import com.google.gson.Gson;
-import com.thebiggestdata.indexing.infrastructure.ports.old.IngestionControlPublisher;
+import com.thebiggestdata.indexing.infrastructure.ports.IngestionControlPublisher;
 import com.thebiggestdata.indexing.model.IngestionControlEvent;
-import jakarta.jms.*;
 
-public class ActiveMQIngestionControlPublisher implements IngestionControlPublisher {
+public final class ActiveMQIngestionControlPublisher implements IngestionControlPublisher {
 
-    private final ConnectionFactory factory;
-    private final Gson gson = new Gson();
-    private static final String TOPIC_NAME = "ingestion.control";
+    private static final String TOPIC = "ingestion.control";
 
-    public ActiveMQIngestionControlPublisher(ConnectionFactory factory) {
-        this.factory = factory;
+    private final JmsTopicPublisher publisher;
+    private final Gson gson;
+
+    public ActiveMQIngestionControlPublisher(JmsTopicPublisher publisher, Gson gson) {
+        this.publisher = publisher;
+        this.gson = gson;
     }
 
-    public void publishPause() {
-        publish(IngestionControlEvent.Type.INGESTION_PAUSE);
+    @Override
+    public void pause() {
+        publish(IngestionControlEvent.Type.PAUSED);
     }
 
-    public void publishResume() {
-        publish(IngestionControlEvent.Type.INGESTION_RESUME);
+    @Override
+    public void resume() {
+        publish(IngestionControlEvent.Type.RESUMED);
     }
 
-    private void publish(IngestionControlEvent.Type type) {
-        try (Connection connection = factory.createConnection()) {
-            connection.start();
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Topic topic = session.createTopic(TOPIC_NAME);
-
-            MessageProducer producer = session.createProducer(topic);
-            producer.setDeliveryMode(DeliveryMode.PERSISTENT);
-
-            IngestionControlEvent event = new IngestionControlEvent(type);
-
-            String json = gson.toJson(event);
-            TextMessage message = session.createTextMessage(json);
-
-            producer.send(message);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+    private void publish(IngestionControlEvent.Type action) {
+        publisher.publish(TOPIC, gson.toJson(new IngestionControlEvent(action)));
     }
 }

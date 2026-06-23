@@ -107,7 +107,10 @@ class HazelcastIndexAdaptersTest {
 
     @Test
     void removesDistributedRebuildStateWhenFinishing() {
-        HazelcastRebuildCoordination coordination = new HazelcastRebuildCoordination(hazelcast);
+        HazelcastRebuildCoordination coordination = new HazelcastRebuildCoordination(
+                hazelcast,
+                Duration.ofMinutes(1)
+        );
 
         assertTrue(coordination.tryStart("first-rebuild"));
         coordination.prepare("first-rebuild", 1);
@@ -121,7 +124,10 @@ class HazelcastIndexAdaptersTest {
 
     @Test
     void keepsIndexingConsumersWaitingUntilRebuildFinishes() throws Exception {
-        HazelcastRebuildCoordination coordination = new HazelcastRebuildCoordination(hazelcast);
+        HazelcastRebuildCoordination coordination = new HazelcastRebuildCoordination(
+                hazelcast,
+                Duration.ofMinutes(1)
+        );
         HazelcastRebuildState rebuildState = new HazelcastRebuildState(hazelcast);
         assertTrue(coordination.tryStart("blocking-rebuild"));
 
@@ -131,5 +137,18 @@ class HazelcastIndexAdaptersTest {
 
         coordination.finish("blocking-rebuild");
         waitingConsumer.get(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void expiresAbandonedRebuildStateAfterLease() throws Exception {
+        HazelcastRebuildCoordination coordination = new HazelcastRebuildCoordination(
+                hazelcast,
+                Duration.ofMillis(100)
+        );
+
+        assertTrue(coordination.tryStart("abandoned-rebuild"));
+        TimeUnit.MILLISECONDS.sleep(300);
+        assertTrue(coordination.tryStart("next-rebuild"));
+        coordination.finish("next-rebuild");
     }
 }

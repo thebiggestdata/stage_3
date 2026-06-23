@@ -22,18 +22,25 @@ public final class HazelcastRebuildCoordination implements RebuildCoordination {
     private final IMap<String, Set<String>> completions;
     private final IMap<String, Integer> maxBookIds;
     private final IMap<String, String> failures;
+    private final Duration activeLease;
 
-    public HazelcastRebuildCoordination(HazelcastInstance hazelcast) {
+    public HazelcastRebuildCoordination(HazelcastInstance hazelcast, Duration activeLease) {
         this.state = hazelcast.getMap(HazelcastNames.REBUILD_STATE);
         this.expected = hazelcast.getMap(HazelcastNames.REBUILD_EXPECTED);
         this.completions = hazelcast.getMap(HazelcastNames.REBUILD_COMPLETIONS);
         this.maxBookIds = hazelcast.getMap(HazelcastNames.REBUILD_MAX_BOOK_IDS);
         this.failures = hazelcast.getMap(HazelcastNames.REBUILD_FAILURES);
+        this.activeLease = activeLease;
     }
 
     @Override
     public boolean tryStart(String rebuildId) {
-        return state.putIfAbsent(HazelcastRebuildState.ACTIVE_KEY, rebuildId) == null;
+        return state.putIfAbsent(
+                HazelcastRebuildState.ACTIVE_KEY,
+                rebuildId,
+                activeLease.toMillis(),
+                TimeUnit.MILLISECONDS
+        ) == null;
     }
 
     @Override

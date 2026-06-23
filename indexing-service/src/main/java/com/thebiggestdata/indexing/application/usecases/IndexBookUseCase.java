@@ -75,6 +75,9 @@ public final class IndexBookUseCase {
             boolean removeFromLiveDatalake,
             String sourceNodeId
     ) {
+        String normalizedSourceNodeId = sourceNodeId == null || sourceNodeId.isBlank()
+                ? "unknown"
+                : sourceNodeId;
         IndexingClaim claim = tracker.claim(generation, bookId);
         if (claim == IndexingClaim.ALREADY_INDEXED) {
             if (removeFromLiveDatalake) {
@@ -87,6 +90,13 @@ public final class IndexBookUseCase {
         }
 
         try {
+            log.info(
+                    "INDEXING_STARTED bookId={} ingestedBy={} indexedBy={} generation={}",
+                    bookId,
+                    normalizedSourceNodeId,
+                    localNodeId,
+                    generation.value()
+            );
             BookContent content = books.get(bookId);
             TermFrequencyAnalyzer.Analysis analysis = analyzer.analyze(content.body());
             List<IndexedTerm> terms = analysis.frequencies().entrySet().stream()
@@ -104,7 +114,7 @@ public final class IndexBookUseCase {
             log.info(
                     "INDEXED bookId={} ingestedBy={} indexedBy={} generation={} terms={} tokens={}",
                     bookId,
-                    sourceNodeId == null || sourceNodeId.isBlank() ? "unknown" : sourceNodeId,
+                    normalizedSourceNodeId,
                     localNodeId,
                     generation.value(),
                     terms.size(),
@@ -113,8 +123,17 @@ public final class IndexBookUseCase {
             return IndexingResult.indexed(bookId, terms.size(), analysis.totalTokens());
         } catch (RuntimeException e) {
             tracker.release(generation, bookId);
-            log.error("Could not index book {}", bookId, e);
-            return IndexingResult.failed(bookId, e.getMessage());
+            String reason = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            log.error(
+                    "INDEXING_FAILED bookId={} ingestedBy={} indexedBy={} generation={} reason={}",
+                    bookId,
+                    normalizedSourceNodeId,
+                    localNodeId,
+                    generation.value(),
+                    reason,
+                    e
+            );
+            return IndexingResult.failed(bookId, reason);
         }
     }
 

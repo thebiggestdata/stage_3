@@ -37,10 +37,14 @@ import com.thebiggestdata.indexing.model.IndexGeneration;
 import com.thebiggestdata.indexing.model.RecoveryResult;
 import io.javalin.Javalin;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public final class Main {
+
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
 
     private Main() {}
 
@@ -50,19 +54,20 @@ public final class Main {
         HazelcastInstance hazelcast = new HazelcastConfig().start(configuration.hazelcastClusterName());
 
         HazelcastClusterTopology topology = new HazelcastClusterTopology(hazelcast);
+        String localNodeId = topology.localNodeId();
         HazelcastIndexGenerationStore generations = new HazelcastIndexGenerationStore(hazelcast);
         HazelcastBookContentStore books = new HazelcastBookContentStore(hazelcast);
         HazelcastInvertedIndex index = new HazelcastInvertedIndex(hazelcast, configuration.indexWriters());
         HazelcastIndexingTracker tracker = new HazelcastIndexingTracker(
                 hazelcast,
-                topology.localNodeId(),
+                localNodeId,
                 configuration.indexingClaimLease()
         );
         HazelcastMetadataStore metadata = new HazelcastMetadataStore(hazelcast);
         HazelcastTokenMetrics tokenMetrics = new HazelcastTokenMetrics(hazelcast);
         HazelcastPendingBookSeeder pendingBooks = new HazelcastPendingBookSeeder(
                 hazelcast,
-                topology.localNodeId(),
+                localNodeId,
                 configuration.lastBookId()
         );
 
@@ -75,7 +80,7 @@ public final class Main {
                 tokenMetrics,
                 new TermFrequencyAnalyzer(new TextTokenizer(new JsonStopWordsLoader().load())),
                 new GutenbergMetadataExtractor(),
-                topology.localNodeId()
+                localNodeId
         );
         RecoverIndexUseCase recoverIndex = new RecoverIndexUseCase(
                 new FilesystemBookArchive(configuration.datalakeRoot()),
@@ -87,7 +92,10 @@ public final class Main {
         RecoveryResult startupRecovery = recoverIndex.execute(activeGeneration);
         pendingBooks.seedAfter(startupRecovery.maxBookId());
 
-        HazelcastRebuildCoordination coordination = new HazelcastRebuildCoordination(hazelcast);
+        HazelcastRebuildCoordination coordination = new HazelcastRebuildCoordination(
+                hazelcast,
+                configuration.rebuildTimeout().plusSeconds(60)
+        );
         HazelcastRebuildState rebuildState = new HazelcastRebuildState(hazelcast);
         ActiveMQConnectionFactory jmsFactory = new ActiveMQConfig().create(
                 configuration.brokerUrl(),
@@ -125,12 +133,23 @@ public final class Main {
         ActiveMQRebuildCommandConsumer rebuildConsumer = new ActiveMQRebuildCommandConsumer(
                 jmsFactory,
                 rebuildMapper,
-                topology.localNodeId()
+                localNodeId
         );
         ActiveMQIndexingEventConsumer eventConsumer = new ActiveMQIndexingEventConsumer(
                 jmsFactory,
                 new BookIngestedMessageMapper(gson),
-                configuration.eventConsumers()
+                configuration.eventConsumers(),
+                localNodeId
+        );
+        log.info(
+                "INDEXING_SERVICE_STARTED nodeId={} brokerUrl={} consumers={} prefetch={} maxRedeliveries={} indexWriters={} hazelcastCluster={}",
+                localNodeId,
+                configuration.brokerUrl(),
+                configuration.eventConsumers(),
+                configuration.eventPrefetch(),
+                configuration.maxRedeliveries(),
+                configuration.indexWriters(),
+                configuration.hazelcastClusterName()
         );
         rebuildConsumer.start(executeRebuild::execute);
         eventConsumer.start(handleBookIngested::execute);

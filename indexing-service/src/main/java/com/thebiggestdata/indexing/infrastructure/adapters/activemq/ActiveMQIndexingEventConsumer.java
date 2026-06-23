@@ -30,6 +30,7 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
     private final ConnectionFactory connectionFactory;
     private final BookIngestedMessageMapper mapper;
     private final int concurrentConsumers;
+    private final String localNodeId;
     private final ExecutorService workers;
     private final Set<Connection> activeConnections = ConcurrentHashMap.newKeySet();
     private final AtomicBoolean running = new AtomicBoolean();
@@ -37,7 +38,8 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
     public ActiveMQIndexingEventConsumer(
             ConnectionFactory connectionFactory,
             BookIngestedMessageMapper mapper,
-            int concurrentConsumers
+            int concurrentConsumers,
+            String localNodeId
     ) {
         if (concurrentConsumers < 1) {
             throw new IllegalArgumentException("concurrentConsumers must be positive");
@@ -45,6 +47,7 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
         this.connectionFactory = connectionFactory;
         this.mapper = mapper;
         this.concurrentConsumers = concurrentConsumers;
+        this.localNodeId = localNodeId == null || localNodeId.isBlank() ? "unknown" : localNodeId;
         this.workers = Executors.newFixedThreadPool(concurrentConsumers, runnable -> {
             Thread thread = new Thread(runnable, "indexing-event-consumer");
             thread.setDaemon(true);
@@ -58,34 +61,38 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
             return;
         }
         for (int worker = 0; worker < concurrentConsumers; worker++) {
-            workers.submit(() -> consumeWithReconnect(handler));
+            int workerId = worker + 1;
+            workers.submit(() -> consumeWithReconnect(handler, workerId));
         }
     }
 
-    private void consumeWithReconnect(Consumer<BookIngestedEvent> handler) {
+    private void consumeWithReconnect(Consumer<BookIngestedEvent> handler, int workerId) {
         while (running.get() && !Thread.currentThread().isInterrupted()) {
             try {
-                consume(handler);
+                consume(handler, workerId);
             } catch (JMSException e) {
                 if (running.get()) {
-                    log.warn("Indexing queue consumer disconnected; retrying", e);
+                    log.warn("Indexing queue consumer disconnected; retrying nodeId={} worker={}",
+                            localNodeId, workerId, e);
                     sleepBeforeReconnect();
                 }
             }
         }
     }
 
-    private void consume(Consumer<BookIngestedEvent> handler) throws JMSException {
+    private void consume(Consumer<BookIngestedEvent> handler, int workerId) throws JMSException {
         try (Connection connection = connectionFactory.createConnection()) {
             activeConnections.add(connection);
             connection.start();
             try (Session session = connection.createSession(true, Session.SESSION_TRANSACTED)) {
                 Queue queue = session.createQueue(QUEUE);
                 try (MessageConsumer consumer = session.createConsumer(queue)) {
+                    log.info("INDEXING_CONSUMER_STARTED queue={} nodeId={} worker={}",
+                            QUEUE, localNodeId, workerId);
                     while (running.get() && !Thread.currentThread().isInterrupted()) {
                         Message message = consumer.receive(1_000);
                         if (message != null) {
-                            handle(message, session, handler);
+                            handle(message, session, handler, workerId);
                         }
                     }
                 }
@@ -98,16 +105,35 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
     private void handle(
             Message message,
             Session session,
-            Consumer<BookIngestedEvent> handler
+            Consumer<BookIngestedEvent> handler,
+            int workerId
     ) throws JMSException {
+        BookIngestedEvent event = null;
         try {
             if (!(message instanceof TextMessage textMessage)) {
                 throw new IllegalArgumentException("Only text indexing events are supported");
             }
-            handler.accept(mapper.fromJson(textMessage.getText()));
+            event = mapper.fromJson(textMessage.getText());
+            log.info(
+                    "INDEXING_EVENT_RECEIVED bookId={} nodeId={} ingestedBy={} worker={} messageId={} redelivered={}",
+                    event.bookId(),
+                    localNodeId,
+                    event.sourceNodeId(),
+                    workerId,
+                    message.getJMSMessageID(),
+                    message.getJMSRedelivered()
+            );
+            handler.accept(event);
             session.commit();
         } catch (RuntimeException e) {
-            log.error("Indexing event failed and will be redelivered", e);
+            log.error(
+                    "INDEXING_EVENT_FAILED bookId={} nodeId={} worker={} reason={}; event will be redelivered",
+                    event == null ? "unknown" : event.bookId(),
+                    localNodeId,
+                    workerId,
+                    e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage(),
+                    e
+            );
             session.rollback();
         }
     }

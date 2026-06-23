@@ -75,30 +75,13 @@ public final class HazelcastInvertedIndex implements InvertedIndex, AutoCloseabl
     }
 
     private void add(IMap<String, Set<String>> index, String term, Set<String> newPostings) {
-        Set<String> immutablePostings = Set.copyOf(newPostings);
-        Set<String> previous = index.putIfAbsent(term, immutablePostings);
-        if (previous == null) {
-            return;
-        }
+        index.merge(term, Set.copyOf(newPostings), this::mergePostings);
+    }
 
-        while (true) {
-            Set<String> merged = new HashSet<>(previous);
-            if (!merged.addAll(newPostings)) {
-                return;
-            }
-
-            if (index.replace(term, previous, Set.copyOf(merged))) {
-                return;
-            }
-
-            previous = index.get(term);
-            if (previous == null) {
-                previous = index.putIfAbsent(term, immutablePostings);
-                if (previous == null) {
-                    return;
-                }
-            }
-        }
+    private Set<String> mergePostings(Set<String> existing, Set<String> incoming) {
+        Set<String> merged = new HashSet<>(existing);
+        merged.addAll(incoming);
+        return Set.copyOf(merged);
     }
 
     private String encodePosting(IndexedTerm term) {

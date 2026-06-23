@@ -1,7 +1,7 @@
 package com.thebiggestdata.search.infrastructure.adapters.hazelcast;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.thebiggestdata.search.model.BookMetadata;
@@ -30,8 +30,7 @@ class HazelcastSearchAdaptersTest {
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
         config.getSerializationConfig().getCompactSerializationConfig()
                 .addSerializer(new BookMetadataSerializer());
-        config.addMultiMapConfig(new MultiMapConfig(HazelcastNames.INVERTED_INDEX + ":*")
-                .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET));
+        config.addMapConfig(new MapConfig(HazelcastNames.INVERTED_INDEX + ":*"));
         hazelcast = Hazelcast.newHazelcastInstance(config);
     }
 
@@ -43,7 +42,7 @@ class HazelcastSearchAdaptersTest {
     @Test
     void readsPostingFrequenciesAndMetadataFromTheRequestedGeneration() {
         IndexGeneration generation = new IndexGeneration("v2");
-        hazelcast.<String, String>getMultiMap("inverted-index:v2").put("clean", "42:3");
+        hazelcast.<String, Set<String>>getMap("inverted-index:v2").put("clean", Set.of("42:3"));
         hazelcast.<Integer, BookMetadata>getMap("bookMetadata:v2").put(
                 42,
                 new BookMetadata("Clean Code", "Robert Martin", "English", 2008)

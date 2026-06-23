@@ -1,10 +1,10 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.hazelcast;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.map.IMap;
 import com.thebiggestdata.indexing.model.IndexGeneration;
 import com.thebiggestdata.indexing.model.IndexedTerm;
 import com.thebiggestdata.indexing.model.IndexingClaim;
@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -34,8 +35,7 @@ class HazelcastIndexAdaptersTest {
         config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-        config.addMultiMapConfig(new MultiMapConfig(HazelcastNames.INVERTED_INDEX + ":*")
-                .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET));
+        config.addMapConfig(new MapConfig(HazelcastNames.INVERTED_INDEX + ":*"));
         hazelcast = Hazelcast.newHazelcastInstance(config);
     }
 
@@ -56,13 +56,33 @@ class HazelcastIndexAdaptersTest {
             index.addAll(first, List.of(new IndexedTerm("clean", 42, 2)));
             index.addAll(second, List.of(new IndexedTerm("clean", 77, 1)));
 
-            MultiMap<String, String> firstIndex = hazelcast.getMultiMap("inverted-index:" + first.value());
-            MultiMap<String, String> secondIndex = hazelcast.getMultiMap("inverted-index:second");
-            assertEquals(List.of("42:2"), firstIndex.get("clean").stream().toList());
-            assertEquals(List.of("77:1"), secondIndex.get("clean").stream().toList());
+            IMap<String, Set<String>> firstIndex = hazelcast.getMap("inverted-index:" + first.value());
+            IMap<String, Set<String>> secondIndex = hazelcast.getMap("inverted-index:second");
+            assertEquals(Set.of("42:2"), firstIndex.get("clean"));
+            assertEquals(Set.of("77:1"), secondIndex.get("clean"));
 
             generations.activate(second);
             assertEquals(second, generations.active());
+        } finally {
+            index.close();
+        }
+    }
+
+    @Test
+    void mergesConcurrentPostingsForTheSameTerm() throws Exception {
+        HazelcastInvertedIndex index = new HazelcastInvertedIndex(hazelcast, 4);
+        IndexGeneration generation = new IndexGeneration("concurrent");
+
+        try {
+            CompletableFuture<Void> firstWrite = CompletableFuture.runAsync(() ->
+                    index.addAll(generation, List.of(new IndexedTerm("shared", 1, 2))));
+            CompletableFuture<Void> secondWrite = CompletableFuture.runAsync(() ->
+                    index.addAll(generation, List.of(new IndexedTerm("shared", 2, 3))));
+
+            CompletableFuture.allOf(firstWrite, secondWrite).get(2, TimeUnit.SECONDS);
+
+            IMap<String, Set<String>> storedIndex = hazelcast.getMap("inverted-index:" + generation.value());
+            assertEquals(Set.of("1:2", "2:3"), storedIndex.get("shared"));
         } finally {
             index.close();
         }

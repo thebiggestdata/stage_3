@@ -1,12 +1,16 @@
 package com.thebiggestdata.indexing.infrastructure.adapters.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.thebiggestdata.indexing.infrastructure.ports.InvertedIndex;
-import com.thebiggestdata.indexing.model.IndexedTerm;
 import com.thebiggestdata.indexing.model.IndexGeneration;
+import com.thebiggestdata.indexing.model.IndexedTerm;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -31,7 +35,7 @@ public final class HazelcastInvertedIndex implements InvertedIndex, AutoCloseabl
 
     @Override
     public void addAll(IndexGeneration generation, List<IndexedTerm> terms) {
-        MultiMap<String, String> index = index(generation);
+        IMap<String, Set<String>> index = index(generation);
         CompletableFuture<?>[] writes = terms.stream()
                 .map(term -> CompletableFuture.runAsync(() -> add(index, term), writerPool))
                 .toArray(CompletableFuture[]::new);
@@ -42,8 +46,8 @@ public final class HazelcastInvertedIndex implements InvertedIndex, AutoCloseabl
         }
     }
 
-    private void add(MultiMap<String, String> index, IndexedTerm term) {
-        index.put(term.term(), encodePosting(term));
+    private void add(IMap<String, Set<String>> index, IndexedTerm term) {
+        index.executeOnKey(term.term(), new AddPosting(encodePosting(term)));
     }
 
     private String encodePosting(IndexedTerm term) {
@@ -55,11 +59,31 @@ public final class HazelcastInvertedIndex implements InvertedIndex, AutoCloseabl
         index(generation).clear();
     }
 
-    private MultiMap<String, String> index(IndexGeneration generation) {
-        return hazelcast.getMultiMap(HazelcastNames.generated(
+    private IMap<String, Set<String>> index(IndexGeneration generation) {
+        return hazelcast.getMap(HazelcastNames.generated(
                 HazelcastNames.INVERTED_INDEX,
                 generation.value()
         ));
+    }
+
+    private static final class AddPosting implements EntryProcessor<String, Set<String>, Void> {
+
+        private final String posting;
+
+        private AddPosting(String posting) {
+            this.posting = posting;
+        }
+
+        @Override
+        public Void process(Map.Entry<String, Set<String>> entry) {
+            Set<String> postings = entry.getValue() == null
+                    ? new HashSet<>()
+                    : new HashSet<>(entry.getValue());
+
+            postings.add(posting);
+            entry.setValue(postings);
+            return null;
+        }
     }
 
     @Override

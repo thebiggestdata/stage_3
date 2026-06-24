@@ -31,4 +31,8 @@ public record IndexingResult(
         return new IndexingResult(bookId, Status.FAILED, 0, 0,errorMessage);
     }
 
+    public boolean isUnrecoverableMissingContentFailure() {
+        return errorMessage != null
+                && errorMessage.startsWith("Book not found in live datalake or archive:");
+    }
 }

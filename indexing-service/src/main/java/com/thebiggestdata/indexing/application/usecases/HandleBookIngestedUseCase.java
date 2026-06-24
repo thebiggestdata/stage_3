@@ -68,9 +68,16 @@ public final class HandleBookIngestedUseCase {
     }
 
     public static final class IndexingNotCompletedException extends RuntimeException {
+        private final IndexingResult result;
+
         public IndexingNotCompletedException(IndexingResult result) {
             super("Indexing did not complete for book %d: %s"
                     .formatted(result.bookId(), result.status()));
+            this.result = result;
+        }
+
+        public IndexingResult result() {
+            return result;
         }
     }
 }

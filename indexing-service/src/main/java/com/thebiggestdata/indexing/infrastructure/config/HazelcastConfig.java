@@ -35,7 +35,7 @@ public final class HazelcastConfig {
     }
 
     private void configureDataStructures(Config config) {
-        int backups = environmentInt("HAZELCAST_BACKUP_COUNT", 1);
+        int backups = environmentInt("HAZELCAST_BACKUP_COUNT", 2);
         config.addMapConfig(new MapConfig(HazelcastNames.INVERTED_INDEX + ":*")
                 .setBackupCount(backups)
                 .setAsyncBackupCount(0)

@@ -2,6 +2,7 @@ package com.thebiggestdata.indexing.infrastructure.adapters.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.thebiggestdata.indexing.infrastructure.ports.BookContentNotFoundException;
 import com.thebiggestdata.indexing.infrastructure.ports.BookContentStore;
 import com.thebiggestdata.indexing.model.BookContent;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public final class HazelcastBookContentStore implements BookContentStore {
         BookContent content = books.get(bookId);
         if (content == null) {
             log.warn("INDEXING_DATALAKE_MISS bookId={} map={}", bookId, books.getName());
-            throw new HazelcastAdapterException("Book not found in live datalake: " + bookId);
+            throw new BookContentNotFoundException("Book not found in live datalake: " + bookId);
         }
         return content;
     }

@@ -13,6 +13,7 @@ import jakarta.jms.TextMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -20,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public final class ActiveMQIndexingEventConsumer implements IndexingEventConsumer {
 
@@ -31,6 +33,7 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
     private final BookIngestedMessageMapper mapper;
     private final int concurrentConsumers;
     private final String localNodeId;
+    private final Predicate<RuntimeException> acknowledgeOnFailure;
     private final ExecutorService workers;
     private final Set<Connection> activeConnections = ConcurrentHashMap.newKeySet();
     private final AtomicBoolean running = new AtomicBoolean();
@@ -39,7 +42,8 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
             ConnectionFactory connectionFactory,
             BookIngestedMessageMapper mapper,
             int concurrentConsumers,
-            String localNodeId
+            String localNodeId,
+            Predicate<RuntimeException> acknowledgeOnFailure
     ) {
         if (concurrentConsumers < 1) {
             throw new IllegalArgumentException("concurrentConsumers must be positive");
@@ -48,6 +52,7 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
         this.mapper = mapper;
         this.concurrentConsumers = concurrentConsumers;
         this.localNodeId = localNodeId == null || localNodeId.isBlank() ? "unknown" : localNodeId;
+        this.acknowledgeOnFailure = Objects.requireNonNull(acknowledgeOnFailure);
         this.workers = Executors.newFixedThreadPool(concurrentConsumers, runnable -> {
             Thread thread = new Thread(runnable, "indexing-event-consumer");
             thread.setDaemon(true);
@@ -126,6 +131,18 @@ public final class ActiveMQIndexingEventConsumer implements IndexingEventConsume
             handler.accept(event);
             message.acknowledge();
         } catch (RuntimeException e) {
+            if (acknowledgeOnFailure.test(e)) {
+                log.error(
+                        "INDEXING_EVENT_DISCARDED bookId={} nodeId={} worker={} reason={}; event will be acknowledged",
+                        event == null ? "unknown" : event.bookId(),
+                        localNodeId,
+                        workerId,
+                        e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage(),
+                        e
+                );
+                message.acknowledge();
+                return;
+            }
             log.error(
                     "INDEXING_EVENT_FAILED bookId={} nodeId={} worker={} reason={}; event will be redelivered",
                     event == null ? "unknown" : event.bookId(),

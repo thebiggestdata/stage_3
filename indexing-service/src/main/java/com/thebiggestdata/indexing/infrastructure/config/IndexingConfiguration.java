@@ -17,7 +17,8 @@ public record IndexingConfiguration(
         Duration inProgressRetryTimeout,
         Duration inProgressRetryDelay,
         Duration rebuildTimeout,
-        int lastBookId
+        int lastBookId,
+        boolean acknowledgeUnrecoverableDatalakeMiss
 ) {
 
     public static IndexingConfiguration load(String[] arguments, Map<String, String> environment) {
@@ -34,7 +35,8 @@ public record IndexingConfiguration(
                 duration(environment, "INDEXING_IN_PROGRESS_RETRY_TIMEOUT_MS", 600_000),
                 duration(environment, "INDEXING_IN_PROGRESS_RETRY_DELAY_MS", 1_000),
                 duration(environment, "REBUILD_TIMEOUT_MS", 600_000),
-                positiveInt(environment, "LAST_BOOK_ID", 100_000)
+                positiveInt(environment, "LAST_BOOK_ID", 100_000),
+                bool(environment, "ACK_UNRECOVERABLE_DATALAKE_MISS", false)
         );
     }
 
@@ -69,5 +71,9 @@ public record IndexingConfiguration(
             throw new IllegalArgumentException(name + " must be positive");
         }
         return Duration.ofMillis(millis);
+    }
+
+    private static boolean bool(Map<String, String> environment, String name, boolean defaultValue) {
+        return Boolean.parseBoolean(value(environment, name, Boolean.toString(defaultValue)));
     }
 }

@@ -39,7 +39,7 @@ public final class HazelcastConfig {
     }
 
     private void setMapConfig(Config config) {
-        int backupCount = environmentInt("HAZELCAST_BACKUP_COUNT", 1);
+        int backupCount = environmentInt("HAZELCAST_BACKUP_COUNT", 2);
         config.addMapConfig(new MapConfig(HazelcastNames.DATALAKE).setBackupCount(backupCount));
         config.addMapConfig(new MapConfig(HazelcastNames.INGESTIONS_IN_PROGRESS).setBackupCount(backupCount));
         config.addMapConfig(new MapConfig(HazelcastNames.REPLICATED_NODES).setBackupCount(backupCount));

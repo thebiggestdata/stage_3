@@ -16,6 +16,7 @@ import com.thebiggestdata.indexing.infrastructure.adapters.activemq.BookIngested
 import com.thebiggestdata.indexing.infrastructure.adapters.activemq.JmsTopicPublisher;
 import com.thebiggestdata.indexing.infrastructure.adapters.activemq.RebuildCommandMessageMapper;
 import com.thebiggestdata.indexing.infrastructure.adapters.filesystem.FilesystemBookArchive;
+import com.thebiggestdata.indexing.infrastructure.adapters.filesystem.FilesystemBookContentArchive;
 import com.thebiggestdata.indexing.infrastructure.adapters.hazelcast.HazelcastBookContentStore;
 import com.thebiggestdata.indexing.infrastructure.adapters.hazelcast.HazelcastClusterTopology;
 import com.thebiggestdata.indexing.infrastructure.adapters.hazelcast.HazelcastIndexGenerationStore;
@@ -27,12 +28,14 @@ import com.thebiggestdata.indexing.infrastructure.adapters.hazelcast.HazelcastRe
 import com.thebiggestdata.indexing.infrastructure.adapters.hazelcast.HazelcastRebuildState;
 import com.thebiggestdata.indexing.infrastructure.adapters.hazelcast.HazelcastTokenMetrics;
 import com.thebiggestdata.indexing.infrastructure.adapters.metadata.GutenbergMetadataExtractor;
+import com.thebiggestdata.indexing.infrastructure.adapters.recovery.RecoveringBookContentStore;
 import com.thebiggestdata.indexing.infrastructure.adapters.tokenizer.JsonStopWordsLoader;
 import com.thebiggestdata.indexing.infrastructure.adapters.tokenizer.TextTokenizer;
 import com.thebiggestdata.indexing.infrastructure.adapters.web.IndexingController;
 import com.thebiggestdata.indexing.infrastructure.config.ActiveMQConfig;
 import com.thebiggestdata.indexing.infrastructure.config.HazelcastConfig;
 import com.thebiggestdata.indexing.infrastructure.config.IndexingConfiguration;
+import com.thebiggestdata.indexing.infrastructure.ports.BookContentStore;
 import com.thebiggestdata.indexing.model.IndexGeneration;
 import com.thebiggestdata.indexing.model.RecoveryResult;
 import io.javalin.Javalin;
@@ -56,7 +59,11 @@ public final class Main {
         HazelcastClusterTopology topology = new HazelcastClusterTopology(hazelcast);
         String localNodeId = topology.localNodeId();
         HazelcastIndexGenerationStore generations = new HazelcastIndexGenerationStore(hazelcast);
-        HazelcastBookContentStore books = new HazelcastBookContentStore(hazelcast);
+        HazelcastBookContentStore liveBooks = new HazelcastBookContentStore(hazelcast);
+        BookContentStore books = new RecoveringBookContentStore(
+                liveBooks,
+                new FilesystemBookContentArchive(configuration.datalakeRoot())
+        );
         HazelcastInvertedIndex index = new HazelcastInvertedIndex(hazelcast, configuration.indexWriters());
         HazelcastIndexingTracker tracker = new HazelcastIndexingTracker(
                 hazelcast,
@@ -139,16 +146,20 @@ public final class Main {
                 jmsFactory,
                 new BookIngestedMessageMapper(gson),
                 configuration.eventConsumers(),
-                localNodeId
+                localNodeId,
+                exception -> configuration.acknowledgeUnrecoverableDatalakeMiss()
+                        && exception instanceof HandleBookIngestedUseCase.IndexingNotCompletedException indexing
+                        && indexing.result().isUnrecoverableMissingContentFailure()
         );
         log.info(
-                "INDEXING_SERVICE_STARTED nodeId={} brokerUrl={} consumers={} prefetch={} maxRedeliveries={} indexWriters={} hazelcastCluster={}",
+                "INDEXING_SERVICE_STARTED nodeId={} brokerUrl={} consumers={} prefetch={} maxRedeliveries={} indexWriters={} ackUnrecoverableDatalakeMiss={} hazelcastCluster={}",
                 localNodeId,
                 configuration.brokerUrl(),
                 configuration.eventConsumers(),
                 configuration.eventPrefetch(),
                 configuration.maxRedeliveries(),
                 configuration.indexWriters(),
+                configuration.acknowledgeUnrecoverableDatalakeMiss(),
                 configuration.hazelcastClusterName()
         );
         rebuildConsumer.start(executeRebuild::execute);

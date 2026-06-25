@@ -1,7 +1,6 @@
 package com.thebiggestdata.measurementmetrics;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
 
@@ -12,20 +11,19 @@ import java.util.concurrent.TimeUnit;
 public final class IngestionRate {
 
     private static final String DOWNLOADED_BOOKS = "downloaded-books";
-    private static final int DEFAULT_SAMPLE_SECONDS = 10;
 
     private IngestionRate() {}
 
     public static void main(String[] args) throws Exception {
         System.setProperty("hazelcast.logging.type", "none");
-        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig());
+        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(BenchmarkEnvironment.clientConfig());
 
         try {
             ISet<Integer> downloadedBooks = hazelcast.getSet(DOWNLOADED_BOOKS);
             List<Double> rates = new ArrayList<>();
             int warmupIterations = 5;
             int measurementIterations = 10;
-            int sampleSeconds = sampleSeconds();
+            int sampleSeconds = BenchmarkEnvironment.sampleSeconds();
 
             for (int iteration = 0; iteration < warmupIterations + measurementIterations; iteration++) {
                 long startCount = downloadedBooks.size();
@@ -48,32 +46,6 @@ public final class IngestionRate {
         } finally {
             hazelcast.shutdown();
         }
-    }
-
-    private static int sampleSeconds() {
-        int seconds = Integer.parseInt(System.getenv().getOrDefault(
-                "BENCHMARK_SAMPLE_SECONDS",
-                String.valueOf(DEFAULT_SAMPLE_SECONDS)
-        ));
-
-        if (seconds < 10 || seconds > 30) {
-            throw new IllegalArgumentException("BENCHMARK_SAMPLE_SECONDS must be between 10 and 30");
-        }
-
-        return seconds;
-    }
-
-    private static ClientConfig clientConfig() {
-        ClientConfig config = new ClientConfig();
-        config.setClusterName(System.getenv().getOrDefault("HAZELCAST_CLUSTER_NAME", "SearchEngine"));
-        String members = System.getenv().getOrDefault(
-                "HZ_MEMBERS",
-                "localhost:5701,localhost:5702,localhost:5703"
-        );
-        for (String member : members.split(",")) {
-            config.getNetworkConfig().addAddress(member.trim());
-        }
-        return config;
     }
 
     static void printResults(String name, String unit, List<Double> rates) {

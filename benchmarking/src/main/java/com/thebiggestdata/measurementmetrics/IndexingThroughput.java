@@ -1,7 +1,6 @@
 package com.thebiggestdata.measurementmetrics;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 
@@ -17,41 +16,51 @@ public final class IndexingThroughput {
 
     public static void main(String[] args) throws Exception {
         System.setProperty("hazelcast.logging.type", "none");
-        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig());
+        HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(BenchmarkEnvironment.clientConfig());
 
         try {
-            List<Double> rates = new ArrayList<>();
+            List<Double> tokenRates = new ArrayList<>();
+            List<Double> bookRates = new ArrayList<>();
             int warmupIterations = 5;
             int measurementIterations = 10;
+            int sampleSeconds = BenchmarkEnvironment.sampleSeconds();
 
             for (int iteration = 0; iteration < warmupIterations + measurementIterations; iteration++) {
                 String generation = activeGeneration(hazelcast);
-                long startTokens = totalTokens(hazelcast, generation);
+                IMap<Integer, Integer> tokenCounts = tokenCounts(hazelcast, generation);
+                long startTokens = totalTokens(tokenCounts);
+                int startBooks = tokenCounts.size();
                 long startTime = System.nanoTime();
-                Thread.sleep(10_000);
+                Thread.sleep(sampleSeconds * 1_000L);
 
                 if (!generation.equals(activeGeneration(hazelcast))) {
                     throw new IllegalStateException("Index generation changed during the benchmark");
                 }
-                long endTokens = totalTokens(hazelcast, generation);
+                long endTokens = totalTokens(tokenCounts);
+                int endBooks = tokenCounts.size();
                 double seconds = (System.nanoTime() - startTime) / 1_000_000_000.0;
                 double tokensPerSecond = (endTokens - startTokens) / seconds;
+                double booksPerSecond = (endBooks - startBooks) / seconds;
 
                 boolean warmup = iteration < warmupIterations;
                 int phaseIteration = warmup ? iteration + 1 : iteration - warmupIterations + 1;
                 if (!warmup) {
-                    rates.add(tokensPerSecond);
+                    tokenRates.add(tokensPerSecond);
+                    bookRates.add(booksPerSecond);
                 }
-                System.out.printf("%s %2d: %.1f tokens/s (%.1fs) [generation=%s, tokens=%d]%n",
+                System.out.printf("%s %2d: %.1f tokens/s, %.3f docs/s (%.1fs) [generation=%s, tokens=%d, docs=%d]%n",
                         warmup ? "warmup" : "iter",
                         phaseIteration,
                         tokensPerSecond,
+                        booksPerSecond,
                         seconds,
                         generation,
-                        endTokens - startTokens);
+                        endTokens - startTokens,
+                        endBooks - startBooks);
             }
 
-            IngestionRate.printResults("IndexingThroughput", "tokens/s", rates);
+            IngestionRate.printResults("IndexingThroughput", "tokens/s", tokenRates);
+            IngestionRate.printResults("IndexedDocuments", "docs/s", bookRates);
         } finally {
             hazelcast.shutdown();
         }
@@ -62,21 +71,11 @@ public final class IndexingThroughput {
         return generations.getOrDefault("active", "initial");
     }
 
-    private static long totalTokens(HazelcastInstance hazelcast, String generation) {
-        IMap<Integer, Integer> tokenCounts = hazelcast.getMap(TOKEN_COUNTS + ":" + generation);
-        return tokenCounts.values().stream().mapToLong(Integer::longValue).sum();
+    private static IMap<Integer, Integer> tokenCounts(HazelcastInstance hazelcast, String generation) {
+        return hazelcast.getMap(TOKEN_COUNTS + ":" + generation);
     }
 
-    private static ClientConfig clientConfig() {
-        ClientConfig config = new ClientConfig();
-        config.setClusterName(System.getenv().getOrDefault("HAZELCAST_CLUSTER_NAME", "SearchEngine"));
-        String members = System.getenv().getOrDefault(
-                "HZ_MEMBERS",
-                "localhost:5701,localhost:5702,localhost:5703"
-        );
-        for (String member : members.split(",")) {
-            config.getNetworkConfig().addAddress(member.trim());
-        }
-        return config;
+    private static long totalTokens(IMap<Integer, Integer> tokenCounts) {
+        return tokenCounts.values().stream().mapToLong(Integer::longValue).sum();
     }
 }

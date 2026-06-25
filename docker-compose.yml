@@ -78,13 +78,8 @@ services:
     build:
       context: ./benchmarking
     image: benchmark:latest
-    ports:
-      - "5704:5704"
     environment:
       BENCHMARK_MODE: ${BENCHMARK_MODE:-recoverytime}
-      BENCHMARK_SAMPLE_SECONDS: ${BENCHMARK_SAMPLE_SECONDS:-10}
-      HZ_PORT: "5704"
-      HZ_PUBLIC_ADDRESS: ${HZ_PUBLIC_ADDRESS:-benchmark}:5704
       HZ_MEMBERS: ${MASTER_IP:-ingestion-service}:5701
       HAZELCAST_CLUSTER_NAME: SearchEngine
     networks:

@@ -1,0 +1,79 @@
+package com.thebiggestdata.indexing.infrastructure.config;
+
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.Map;
+
+public record IndexingConfiguration(
+        Path datalakeRoot,
+        String brokerUrl,
+        String hazelcastClusterName,
+        int servicePort,
+        int eventConsumers,
+        int eventPrefetch,
+        int maxRedeliveries,
+        int indexWriters,
+        Duration indexingClaimLease,
+        Duration inProgressRetryTimeout,
+        Duration inProgressRetryDelay,
+        Duration rebuildTimeout,
+        int lastBookId,
+        boolean acknowledgeUnrecoverableDatalakeMiss
+) {
+
+    public static IndexingConfiguration load(String[] arguments, Map<String, String> environment) {
+        return new IndexingConfiguration(
+                Path.of(arguments.length == 0 ? "datalake" : arguments[0]),
+                value(environment, "BROKER_URL", "tcp://localhost:61616"),
+                value(environment, "HAZELCAST_CLUSTER_NAME", "SearchEngine"),
+                positiveInt(environment, "SERVICE_PORT", 7002),
+                positiveInt(environment, "INDEXING_CONSUMERS", 2),
+                positiveInt(environment, "ACTIVEMQ_PREFETCH", 1),
+                nonNegativeInt(environment, "ACTIVEMQ_MAX_REDELIVERIES", 50),
+                positiveInt(environment, "INDEX_WRITERS", 4),
+                duration(environment, "INDEXING_CLAIM_LEASE_MS", 300_000),
+                duration(environment, "INDEXING_IN_PROGRESS_RETRY_TIMEOUT_MS", 600_000),
+                duration(environment, "INDEXING_IN_PROGRESS_RETRY_DELAY_MS", 1_000),
+                duration(environment, "REBUILD_TIMEOUT_MS", 600_000),
+                positiveInt(environment, "LAST_BOOK_ID", 100_000),
+                bool(environment, "ACK_UNRECOVERABLE_DATALAKE_MISS", false)
+        );
+    }
+
+    private static String value(Map<String, String> environment, String name, String defaultValue) {
+        String value = environment.get(name);
+        return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private static int positiveInt(Map<String, String> environment, String name, int defaultValue) {
+        int value = integer(environment, name, defaultValue);
+        if (value < 1) {
+            throw new IllegalArgumentException(name + " must be positive");
+        }
+        return value;
+    }
+
+    private static int nonNegativeInt(Map<String, String> environment, String name, int defaultValue) {
+        int value = integer(environment, name, defaultValue);
+        if (value < 0) {
+            throw new IllegalArgumentException(name + " must not be negative");
+        }
+        return value;
+    }
+
+    private static int integer(Map<String, String> environment, String name, int defaultValue) {
+        return Integer.parseInt(value(environment, name, Integer.toString(defaultValue)));
+    }
+
+    private static Duration duration(Map<String, String> environment, String name, long defaultMillis) {
+        long millis = Long.parseLong(value(environment, name, Long.toString(defaultMillis)));
+        if (millis < 1) {
+            throw new IllegalArgumentException(name + " must be positive");
+        }
+        return Duration.ofMillis(millis);
+    }
+
+    private static boolean bool(Map<String, String> environment, String name, boolean defaultValue) {
+        return Boolean.parseBoolean(value(environment, name, Boolean.toString(defaultValue)));
+    }
+}

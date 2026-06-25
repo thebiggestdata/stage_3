@@ -12,6 +12,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class RecoveryTime {
 
+    private static final String DATALAKE = "datalake";
+
     private RecoveryTime() {}
 
     public static void main(String[] args) throws Exception {
@@ -37,7 +39,9 @@ public final class RecoveryTime {
         private final long stableMillis;
         private final long pollMillis;
         private final AtomicBoolean measuring = new AtomicBoolean();
+        private final AtomicBoolean lastProbeSucceeded = new AtomicBoolean(true);
         private final AtomicLong startedAtNanos = new AtomicLong();
+        private final AtomicLong lastMembershipChangeNanos = new AtomicLong();
         private final AtomicInteger baselineMembers = new AtomicInteger();
 
         private RecoveryMonitor(
@@ -57,16 +61,17 @@ public final class RecoveryTime {
             while (true) {
                 int members = memberCount();
                 boolean stableMembership = members == lastMembers;
-                boolean clusterSafe = hazelcast.getPartitionService().isClusterSafe();
+                boolean clusterAvailable = probeCluster();
 
-                if (members >= 2 && stableMembership && clusterSafe) {
+                if (members >= 2 && stableMembership && clusterAvailable) {
                     if (stableSince == 0) {
                         stableSince = System.nanoTime();
                     }
                     if (elapsedMillis(stableSince) >= stableMillis) {
                         baselineMembers.set(members);
+                        lastMembershipChangeNanos.set(System.nanoTime());
                         System.out.printf(
-                                "%n>>> CLUSTER IS SAFE AND STABLE. baselineMembers=%d%n",
+                                "%n>>> CLUSTER IS AVAILABLE AND STABLE. baselineMembers=%d%n",
                                 members
                         );
                         System.out.println(">>> Stop one service node now.");
@@ -85,6 +90,7 @@ public final class RecoveryTime {
                 @Override
                 public void memberAdded(MembershipEvent event) {
                     System.out.println("New member added: " + event.getMember());
+                    lastMembershipChangeNanos.set(System.nanoTime());
                     if (!measuring.get()) {
                         baselineMembers.set(memberCount());
                     }
@@ -92,24 +98,25 @@ public final class RecoveryTime {
 
                 @Override
                 public void memberRemoved(MembershipEvent event) {
+                    lastMembershipChangeNanos.set(System.nanoTime());
                     startMeasurement("member-removed " + event.getMember());
                 }
             });
 
-            boolean wasSafe = hazelcast.getPartitionService().isClusterSafe();
             while (true) {
                 int members = memberCount();
-                boolean safe = hazelcast.getPartitionService().isClusterSafe();
+                boolean clusterAvailable = probeCluster();
                 if (members < baselineMembers.get()) {
                     startMeasurement("member-count " + baselineMembers.get() + "->" + members);
                 }
-                if (wasSafe && !safe) {
-                    startMeasurement("cluster-unsafe");
+                if (lastProbeSucceeded.getAndSet(clusterAvailable) && !clusterAvailable) {
+                    startMeasurement("cluster-probe-failed");
                 }
-                if (measuring.get() && safe) {
+                if (measuring.get()
+                        && clusterAvailable
+                        && elapsedMillis(lastMembershipChangeNanos.get()) >= stableMillis) {
                     finishMeasurement(members);
                 }
-                wasSafe = safe;
                 Thread.sleep(pollMillis);
             }
         }
@@ -133,6 +140,15 @@ public final class RecoveryTime {
 
         private int memberCount() {
             return hazelcast.getCluster().getMembers().size();
+        }
+
+        private boolean probeCluster() {
+            try {
+                hazelcast.getMap(DATALAKE).size();
+                return true;
+            } catch (RuntimeException e) {
+                return false;
+            }
         }
 
         private long elapsedMillis(long startedAtNanos) {

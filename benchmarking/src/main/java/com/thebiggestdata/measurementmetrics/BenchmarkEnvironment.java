@@ -4,7 +4,7 @@ import com.hazelcast.client.config.ClientConfig;
 
 final class BenchmarkEnvironment {
 
-    private static final int SAMPLE_SECONDS = 20;
+    private static final int SAMPLE_SECONDS = 10;
     private static final long CLUSTER_STABLE_MS = 5_000;
     private static final long POLL_MS = 100;
 

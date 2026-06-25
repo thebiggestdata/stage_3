@@ -1,0 +1,4 @@
+cluster,samples,duration_seconds,throughput_requests_per_second,average_ms,median_ms,p95_ms,p99_ms,max_ms,errors,average_response_bytes,max_threads
+3nodes,45000,75.538,595.727,82.916,70,154,198,7815,0,453.1,70
+6nodes,45000,115.395,389.965,122.176,114,216,279,962,0,885.2,70
+9nodes,45000,120.499,373.447,126.780,113,245,339,711,0,3403.8,70

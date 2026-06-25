@@ -1,0 +1,4 @@
+cluster,ingestion_rate_avg_docs_per_second,ingestion_rate_std_docs_per_second,ingestion_rate_min_docs_per_second,ingestion_rate_max_docs_per_second,indexing_throughput_avg_tokens_per_second,indexing_throughput_std_tokens_per_second,indexing_throughput_min_tokens_per_second,indexing_throughput_max_tokens_per_second,indexed_documents_avg_docs_per_second,indexed_documents_std_docs_per_second,indexed_documents_min_docs_per_second,indexed_documents_max_docs_per_second,recovery_time_seconds
+3nodes,0.040,0.120,0.000,0.400,5401.543,8979.735,0.000,26587.093,0.050,0.067,0.000,0.199,
+6nodes,0.070,0.142,0.000,0.400,2487.841,4459.476,0.000,15214.476,0.070,0.078,0.000,0.199,
+9nodes,0.120,0.359,0.000,1.198,4891.949,8876.548,0.000,30723.828,0.109,0.069,0.000,0.198,12.712

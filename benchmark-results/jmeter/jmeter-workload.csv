@@ -1,0 +1,6 @@
+query_group,endpoint,users,ramp_up_seconds,loop_count,total_requests
+Simple Keyword Query,/search?q=love,20,10,1000,20000
+Multiple Keywords Query,"/search?q=love,death",15,15,500,7500
+Filtered Query,/search?q=love&author=William%20Shakespeare&year=1994&language=English,15,15,500,7500
+Year-Language Query,/search?q=love&year=1994&language=English,10,10,500,5000
+Author Query,/search?q=beauty&author=Oscar%20Wilde,10,10,500,5000
